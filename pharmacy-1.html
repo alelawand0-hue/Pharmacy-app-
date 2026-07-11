@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سیستەمی بەڕێوەبردنی سەیدەلیە</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#0f4c8c;
+    --primary-dark:#0a3663;
+    --accent:#3f8ee8;
+    --bg:#f4f8fc;
+    --card:#ffffff;
+    --ink:#122236;
+    --muted:#5f7690;
+    --line:#dbe6f2;
+    --danger:#c0392b;
+    --ok:#1c8a4b;
+    --warn:#d68910;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Vazirmatn', Tahoma, sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  input,select,button,textarea{font-family:inherit;}
+  button{cursor:pointer;}
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 55%, #06264a 100%);
+    padding:20px;
+  }
+  .loginCard{
+    background:var(--card);
+    width:100%;
+    max-width:400px;
+    border-radius:18px;
+    padding:36px 30px;
+    box-shadow:0 20px 60px rgba(6,38,74,.35);
+  }
+  .loginCard h1{
+    font-size:22px;
+    margin:0 0 4px;
+    color:var(--primary-dark);
+    text-align:center;
+  }
+  .loginCard p.sub{
+    text-align:center;
+    color:var(--muted);
+    margin:0 0 24px;
+    font-size:13px;
+  }
+  .roleTabs{display:flex;gap:8px;margin-bottom:18px;}
+  .roleTabs button{
+    flex:1;
+    padding:10px;
+    border-radius:10px;
+    border:2px solid var(--line);
+    background:#f7fbff;
+    color:var(--muted);
+    font-weight:600;
+    font-size:14px;
+    transition:.15s;
+  }
+  .roleTabs button.active{
+    background:var(--primary);
+    border-color:var(--primary);
+    color:#fff;
+  }
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600;}
+  .field input, .field select{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:14px;
+    background:#fbfdff;
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--accent);}
+  .btnPrimary{
+    width:100%;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    padding:12px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:700;
+  }
+  .btnPrimary:hover{background:var(--primary-dark);}
+  .loginError{color:var(--danger);font-size:13px;text-align:center;margin-top:10px;min-height:16px;}
+
+  /* ---------- APP SHELL ---------- */
+  #app{display:none;min-height:100vh;}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{
+    width:220px;
+    background:var(--primary-dark);
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    padding:20px 14px;
+    flex-shrink:0;
+  }
+  .sidebar .brand{
+    font-size:16px;
+    font-weight:800;
+    margin-bottom:4px;
+    padding:0 6px;
+  }
+  .sidebar .roleTag{
+    font-size:12px;
+    opacity:.75;
+    padding:0 6px;
+    margin-bottom:20px;
+  }
+  .navBtn{
+    background:none;
+    border:none;
+    color:#dceafd;
+    text-align:right;
+    padding:11px 12px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:4px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .navBtn .ic{font-size:16px;}
+  .navBtn:hover{background:rgba(255,255,255,.08);}
+  .navBtn.active{background:var(--accent);color:#fff;}
+  .sidebar .spacer{flex:1;}
+  .logoutBtn{
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.2);
+    color:#fff;
+    padding:10px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .main{flex:1;padding:22px 26px;overflow-x:auto;}
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .topbar h2{margin:0;color:var(--primary-dark);font-size:20px;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:18px;
+  }
+  .cardTitle{font-size:14px;font-weight:700;color:var(--primary-dark);margin:0 0 14px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:700;background:#f2f8ff;position:sticky;top:0;}
+  tr:hover td{background:#f8fbff;}
+  .tblWrap{max-height:420px;overflow:auto;border-radius:10px;border:1px solid var(--line);}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  .btn{
+    border:none;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:700;
+  }
+  .btn.blue{background:var(--primary);color:#fff;}
+  .btn.blue:hover{background:var(--primary-dark);}
+  .btn.ghost{background:#eef5ff;color:var(--primary-dark);border:1px solid var(--line);}
+  .btn.ghost:hover{background:#e0edfc;}
+  .btn.danger{background:#fdecea;color:var(--danger);}
+  .btn.danger:hover{background:#f8d7d2;}
+  .btn.ok{background:#e8f8ee;color:var(--ok);}
+  .btn.small{padding:5px 10px;font-size:12px;border-radius:7px;}
+
+  input[type=text], input[type=number], input[type=date], input[type=password], select, textarea{
+    width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13.5px;background:#fbfdff;
+  }
+  input:focus, select:focus, textarea:focus{outline:none;border-color:var(--accent);}
+  label.lbl{display:block;font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:5px;}
+
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;}
+  .badge.red{background:#fdecea;color:var(--danger);}
+  .badge.orange{background:#fff4e2;color:var(--warn);}
+  .badge.green{background:#e8f8ee;color:var(--ok);}
+  .badge.gray{background:#eef2f6;color:var(--muted);}
+
+  .priceChoice{
+    display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;
+  }
+  .priceBtn{
+    flex:1;min-width:110px;
+    border:2px solid var(--line);
+    background:#fbfdff;
+    border-radius:10px;
+    padding:10px;
+    text-align:center;
+  }
+  .priceBtn small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px;}
+  .priceBtn b{font-size:15px;color:var(--primary-dark);}
+  .priceBtn.sel{border-color:var(--accent);background:#eaf4ff;}
+
+  .cartBox{border:1px dashed var(--line);border-radius:10px;padding:10px;margin-top:8px;}
+  .empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:13.5px;}
+  .modalBg{
+    display:none;position:fixed;inset:0;background:rgba(10,30,55,.45);
+    align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .modalBg.show{display:flex;}
+  .modalCard{
+    background:#fff;border-radius:14px;padding:22px;max-width:560px;width:100%;
+    max-height:88vh;overflow:auto;
+  }
+  .modalCard h3{margin:0 0 16px;color:var(--primary-dark);}
+  .row{display:flex;gap:10px;align-items:center;}
+  .row.between{justify-content:space-between;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .kpi span{display:block;color:var(--muted);font-size:12.5px;margin-bottom:6px;font-weight:700;}
+  .kpi b{font-size:19px;color:var(--primary-dark);}
+  .strike{text-decoration:line-through;opacity:.5;}
+  .colorSwatch{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--line);padding:0;}
+
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;right:0;left:0;padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="loginScreen">
+  <div class="loginCard">
+    <h1 id="loginPharmName">سیستەمی سەیدەلیە</h1>
+    <p class="sub">تکایە جۆری بەکارهێنەر و ووشەی نهێنی داخڵ بکە</p>
+    <div class="roleTabs">
+      <button type="button" id="tabManager" class="active" onclick="setLoginRole('manager')">🧑‍💼 بەڕێوەبەر</button>
+      <button type="button" id="tabEmployee" onclick="setLoginRole('employee')">🧑‍⚕️ کارمەند</button>
+    </div>
+    <div class="field">
+      <label>ووشەی نهێنی</label>
+      <input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btnPrimary" onclick="doLogin()">چوونەژوورەوە</button>
+    <div class="loginError" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand" id="sideBrand">سەیدەلیە</div>
+      <div class="roleTag" id="sideRole">—</div>
+      <button class="navBtn" data-view="warehouse" onclick="switchView('warehouse')"><span class="ic">📦</span> کۆگا</button>
+      <button class="navBtn" data-view="sales" onclick="switchView('sales')"><span class="ic">🧾</span> فرۆشتن</button>
+      <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> قەرز</button>
+      <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> راپۆرت</button>
+      <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> ئێکسپایەر</button>
+      <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> ڕێکخستن</button>
+      <div class="spacer"></div>
+      <button class="logoutBtn" onclick="logout()">🚪 دەرچوون</button>
+    </div>
+
+    <div class="main">
+
+      <!-- ============ WAREHOUSE ============ -->
+      <section id="view-warehouse" style="display:none;">
+        <div class="topbar">
+          <h2>📦 کۆگا</h2>
+          <button class="btn blue" onclick="openMedModal()">+ زیادکردنی دەرمان</button>
+        </div>
+        <div class="card">
+          <input type="text" id="whSearch" placeholder="گەران بە ناو یان بارکۆدی دەرمان..." oninput="renderWarehouse()">
+        </div>
+        <div class="card">
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th>ناو</th><th>جۆر</th><th>بارکۆد</th><th>بەروار بەسەرچوون</th>
+                <th>بڕی مابوو</th><th>نرخی کۆگا</th><th>نرخی ستیکەر</th><th>نرخی داشکان</th><th>کردار</th>
+              </tr></thead>
+              <tbody id="whTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SALES ============ -->
+      <section id="view-sales" style="display:none;">
+        <div class="topbar"><h2>🧾 فرۆشتن</h2></div>
+        <div class="card">
+          <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
+          <input type="text" id="saleSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderSaleSearchResults()" onkeydown="if(event.key==='Enter')trySaleSearchDirect()">
+          <div id="saleSearchResults"></div>
+        </div>
+
+        <div class="card" id="salePickCard" style="display:none;">
+          <div class="cardTitle" id="salePickName"></div>
+          <div class="priceChoice" id="salePriceChoice"></div>
+          <div class="grid2">
+            <div class="field">
+              <label class="lbl" id="saleQtyLabel">بڕی فرۆشتن</label>
+              <input type="number" id="saleQty" min="1" value="1">
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end;">
+              <button class="btn blue" style="width:100%;" onclick="addToCart()">+ زیادکردن بۆ سەبەتە</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">سەبەتەی فرۆشتن</div>
+          <div id="cartBox" class="cartBox"><div class="empty">هیچ شتێک زیاد نەکراوە</div></div>
+          <div class="row between" style="margin-top:14px;">
+            <b id="cartTotal">کۆی گشتی: 0</b>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
+          <div class="grid2">
+            <div class="field">
+              <label class="lbl">جۆری فرۆشتن</label>
+              <select id="saleType" onchange="toggleDebtorField()">
+                <option value="cash">نەقد</option>
+                <option value="debt">قەرز</option>
+              </select>
+            </div>
+            <div class="field" id="debtorField" style="display:none;">
+              <label class="lbl">ناوی نەخۆش</label>
+              <input type="text" id="debtorName" list="debtorList" placeholder="ناوی نەخۆش بنووسە">
+              <datalist id="debtorList"></datalist>
+            </div>
+          </div>
+          <button class="btn blue" style="margin-top:8px;" onclick="finalizeSale()">✔️ تەواوکردنی فرۆشتن</button>
+        </div>
+      </section>
+
+      <!-- ============ DEBT ============ -->
+      <section id="view-debt" style="display:none;">
+        <div class="topbar"><h2>💳 قەرز</h2></div>
+        <div class="card">
+          <input type="text" id="debtSearch" placeholder="گەران بە ناوی نەخۆش..." oninput="renderDebtList()">
+        </div>
+        <div class="card">
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th>ناوی نەخۆش</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>بەروار / کات</th><th>دۆخ</th><th>کردار</th>
+              </tr></thead>
+              <tbody id="debtTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ REPORTS ============ -->
+      <section id="view-reports" style="display:none;">
+        <div class="topbar"><h2>📊 راپۆرت</h2></div>
+        <div class="card">
+          <label class="lbl">ڕۆژ</label>
+          <input type="date" id="reportDate" onchange="renderReport()">
+        </div>
+        <div class="kpis" id="reportKpis"></div>
+        <div class="card">
+          <div class="cardTitle">فرۆشتنەکانی ئەم ڕۆژە</div>
+          <div class="tblWrap">
+            <table>
+              <thead><tr><th>کات</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>جۆر</th><th>نەخۆش</th></tr></thead>
+              <tbody id="reportTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EXPIRY ============ -->
+      <section id="view-expiry" style="display:none;">
+        <div class="topbar"><h2>⏰ ئێکسپایەر (٦٠ ڕۆژ یان کەمتر)</h2></div>
+        <div class="card">
+          <div class="tblWrap">
+            <table>
+              <thead><tr><th>ناوی دەرمان</th><th>بەروار بەسەرچوون</th><th>ڕۆژی ماوە</th><th>بڕی مابوو</th></tr></thead>
+              <tbody id="expiryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section id="view-settings" style="display:none;">
+        <div class="topbar"><h2>⚙️ ڕێکخستن</h2></div>
+        <div class="card">
+          <div class="cardTitle">زانیاری سەیدەلیە (بۆ وەسڵ)</div>
+          <div class="grid2">
+            <div class="field"><label class="lbl">ناوی سەیدەلیە</label><input type="text" id="setPharmName"></div>
+            <div class="field"><label class="lbl">ناونیشان</label><input type="text" id="setAddress"></div>
+          </div>
+          <button class="btn blue" onclick="saveGeneralSettings()">پاشەکەوتکردن</button>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">ڕەنگی سیستەم</div>
+          <div class="row" style="gap:16px;">
+            <div>
+              <label class="lbl">ڕەنگی سەرەکی</label>
+              <input type="color" id="setColorPrimary" class="colorSwatch">
+            </div>
+            <div>
+              <label class="lbl">ڕەنگی لاوەکی</label>
+              <input type="color" id="setColorAccent" class="colorSwatch">
+            </div>
+            <button class="btn ghost" onclick="applyColors(true)">جێبەجێکردن و پاشەکەوت</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">گۆڕینی ووشەی نهێنی</div>
+          <div class="grid2">
+            <div class="field"><label class="lbl">ووشەی نهێنی نوێی بەڕێوەبەر</label><input type="password" id="setManagerPass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی"></div>
+            <div class="field"><label class="lbl">ووشەی نهێنی نوێی کارمەند</label><input type="password" id="setEmployeePass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی"></div>
+          </div>
+          <button class="btn blue" onclick="savePasswords()">گۆڕینی ووشە نهێنیەکان</button>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">داتا</div>
+          <button class="btn danger" onclick="resetAllData()">سڕینەوەی هەموو داتا (ڕیسێت)</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MEDICINE MODAL ===================== -->
+<div class="modalBg" id="medModal">
+  <div class="modalCard">
+    <h3 id="medModalTitle">زیادکردنی دەرمانی نوێ</h3>
+    <input type="hidden" id="medId">
+    <div class="grid2">
+      <div class="field"><label class="lbl">ناوی دەرمان *</label><input type="text" id="medName"></div>
+      <div class="field">
+        <label class="lbl">بارکۆد</label>
+        <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()">دروستکردن</button></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="lbl">جۆری دەرمان</label>
+        <select id="medType">
+          <option>شەربەت (Syrup)</option><option>ساشێ (Sachet)</option><option>بائوتڵ (Bottle)</option>
+          <option>ڤایەل (Vial)</option><option>ئامپول (Amp)</option><option>پۆدەر (Powder)</option>
+          <option>لۆشن (Lotion)</option><option>سۆلیوشن (Solution)</option><option>جێڵ (Gel)</option>
+          <option>کرێم (Cream)</option><option>ئۆینتمێنت (Ointment)</option><option>شامپۆ (Shampoo)</option>
+          <option>دەرمانی دەمی (Oral Solution)</option><option>ئینجێکشن (Injection)</option>
+          <option>سرینج (Syringe)</option><option>حەب (Tablet)</option><option>کپسوڵ (Capsule)</option>
+          <option>ئینفیوژن (Infusion)</option>
+        </select>
+      </div>
+      <div class="field"><label class="lbl">بەروار بەسەرچوون</label><input type="date" id="medExpiry"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label class="lbl">دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)</label><input type="number" id="medPackSize" min="1" value="1"></div>
+      <div class="field"><label class="lbl">کۆی گشتی لە کۆگا (دانە/شریت)</label><input type="number" id="medTotalUnits" min="0" value="0"></div>
+      <div class="field"><label class="lbl">ناوی یەکە (دانە/شریت/پاکەت)</label><input type="text" id="medUnitLabel" value="دانە"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label class="lbl">نرخی کۆگا</label><input type="number" id="medWholesale" min="0" value="0"></div>
+      <div class="field"><label class="lbl">نرخی ستیکەر</label><input type="number" id="medSticker" min="0" value="0"></div>
+      <div class="field"><label class="lbl">نرخی داشکان</label><input type="number" id="medDiscount" min="0" value="0"></div>
+    </div>
+    <div class="row between" style="margin-top:16px;">
+      <button class="btn danger" id="medDeleteBtn" style="display:none;" onclick="deleteMed()">سڕینەوە</button>
+      <div class="row" style="gap:8px;">
+        <button class="btn ghost" onclick="closeMedModal()">پاشگەزبوونەوە</button>
+        <button class="btn blue" onclick="saveMed()">پاشەکەوتکردن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== RECEIPT MODAL ===================== -->
+<div class="modalBg" id="receiptModal">
+  <div class="modalCard" style="max-width:380px;">
+    <h3>وەسڵ ئامادەیە</h3>
+    <div id="receiptPreview" style="border:1px dashed var(--line);border-radius:10px;padding:14px;font-size:13.5px;"></div>
+    <div class="row" style="gap:8px;margin-top:16px;">
+      <button class="btn ghost" style="flex:1;" onclick="closeReceiptModal()">داخستن</button>
+      <button class="btn blue" style="flex:1;" onclick="printReceipt()">🖨️ چاپکردن</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+/* ===================== STORAGE ===================== */
+const LS_SETTINGS='phx_settings', LS_MEDS='phx_medicines', LS_SALES='phx_sales';
+
+function defaultSettings(){
+  return {
+    pharmacyName:'سەیدەلیەکەم',
+    address:'',
+    colorPrimary:'#0f4c8c',
+    colorAccent:'#3f8ee8',
+    managerPass:'1234',
+    employeePass:'1234'
+  };
+}
+function loadSettings(){
+  const s = localStorage.getItem(LS_SETTINGS);
+  return s ? JSON.parse(s) : defaultSettings();
+}
+function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
+function loadMeds(){ const s = localStorage.getItem(LS_MEDS); return s ? JSON.parse(s) : []; }
+function saveMeds(m){ localStorage.setItem(LS_MEDS, JSON.stringify(m)); }
+function loadSales(){ const s = localStorage.getItem(LS_SALES); return s ? JSON.parse(s) : []; }
+function saveSales(s){ localStorage.setItem(LS_SALES, JSON.stringify(s)); }
+
+let settings = loadSettings();
+let medicines = loadMeds();
+let sales = loadSales();
+let currentRole = null; // 'manager' | 'employee'
+let loginRoleChoice = 'manager';
+let cart = []; // {medId, name, unitLabel, qty, priceType, priceValue, barcode}
+let currentPick = null; // medicine currently selected in sales panel
+let selectedPriceType = null;
+
+function uid(){ return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function nowTimeStr(){ const d=new Date(); return d.toTimeString().slice(0,5); }
+
+/* ===================== LOGIN ===================== */
+function setLoginRole(r){
+  loginRoleChoice = r;
+  document.getElementById('tabManager').classList.toggle('active', r==='manager');
+  document.getElementById('tabEmployee').classList.toggle('active', r==='employee');
+}
+function doLogin(){
+  const pass = document.getElementById('loginPass').value;
+  const correct = loginRoleChoice==='manager' ? settings.managerPass : settings.employeePass;
+  if(pass === correct){
+    currentRole = loginRoleChoice;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('sideRole').textContent = currentRole==='manager' ? '🧑‍💼 بەڕێوەبەر' : '🧑‍⚕️ کارمەند';
+    applyPermissions();
+    const firstView = currentRole==='manager' ? 'warehouse' : 'warehouse';
+    switchView(firstView);
+    document.getElementById('loginErr').textContent='';
+    document.getElementById('loginPass').value='';
+  } else {
+    document.getElementById('loginErr').textContent='ووشەی نهێنی هەڵەیە';
+  }
+}
+function logout(){
+  currentRole=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+}
+
+function applyPermissions(){
+  const allowedEmployee=['warehouse','sales','expiry'];
+  document.querySelectorAll('.navBtn').forEach(btn=>{
+    const v = btn.getAttribute('data-view');
+    if(currentRole==='employee' && !allowedEmployee.includes(v)){
+      btn.style.display='none';
+    } else {
+      btn.style.display='flex';
+    }
+  });
+}
+
+/* ===================== NAV ===================== */
+function switchView(name){
+  if(currentRole==='employee' && !['warehouse','sales','expiry'].includes(name)) return;
+  document.querySelectorAll('section[id^="view-"]').forEach(s=>s.style.display='none');
+  document.getElementById('view-'+name).style.display='block';
+  document.querySelectorAll('.navBtn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===name));
+  if(name==='warehouse') renderWarehouse();
+  if(name==='sales') { renderSaleSearchResults(); renderCart(); }
+  if(name==='debt') renderDebtList();
+  if(name==='reports'){
+    if(!document.getElementById('reportDate').value) document.getElementById('reportDate').value = todayStr();
+    renderReport();
+  }
+  if(name==='expiry') renderExpiry();
+  if(name==='settings') fillSettingsForm();
+}
+
+/* ===================== COLORS ===================== */
+function applyColorVars(){
+  document.documentElement.style.setProperty('--primary', settings.colorPrimary);
+  document.documentElement.style.setProperty('--accent', settings.colorAccent);
+  // derive a darker shade for primary-dark
+  document.documentElement.style.setProperty('--primary-dark', shadeColor(settings.colorPrimary, -18));
+}
+function shadeColor(hex, percent){
+  try{
+    let f=parseInt(hex.slice(1),16), t=percent<0?0:255, p=Math.abs(percent)/100;
+    let R=f>>16, G=f>>8&0x00FF, B=f&0x0000FF;
+    let newColor = "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
+    return newColor;
+  }catch(e){ return hex; }
+}
+
+/* ===================== MEDICINE HELPERS ===================== */
+function stockDisplay(med){
+  const packSize = med.packSize>0?med.packSize:1;
+  if(packSize>1){
+    const cartons = Math.floor(med.totalUnits/packSize);
+    const rem = med.totalUnits % packSize;
+    let out='';
+    if(cartons>0) out += cartons+' کارتۆن';
+    if(rem>0) out += (cartons>0?' + ':'')+rem+' '+med.unitLabel;
+    if(cartons===0 && rem===0) out = '0 '+med.unitLabel;
+    return out;
+  }
+  return med.totalUnits+' '+med.unitLabel;
+}
+function findMedByBarcodeOrName(query){
+  query = query.trim().toLowerCase();
+  if(!query) return [];
+  return medicines.filter(m => m.barcode.toLowerCase()===query || m.name.toLowerCase().includes(query) || m.barcode.toLowerCase().includes(query));
+}
+
+/* ===================== WAREHOUSE VIEW ===================== */
+function renderWarehouse(){
+  const q = document.getElementById('whSearch').value.trim().toLowerCase();
+  const tbody = document.getElementById('whTableBody');
+  let list = medicines;
+  if(q){
+    list = medicines.filter(m => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q));
+  }
+  if(list.length===0){
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">هیچ دەرمانێک نەدۆزرایەوە</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(m=>{
+    const days = daysUntilExpiry(m.expiry);
+    let expBadge = '';
+    if(days!==null){
+      if(days<0) expBadge = '<span class="badge red">بەسەرچووە</span>';
+      else if(days<=60) expBadge = '<span class="badge orange">'+days+' ڕۆژ ماوە</span>';
+    }
+    return `<tr>
+      <td>${escapeHtml(m.name)}</td>
+      <td>${escapeHtml(m.type)}</td>
+      <td>${escapeHtml(m.barcode)}</td>
+      <td>${m.expiry||'—'} ${expBadge}</td>
+      <td>${stockDisplay(m)}</td>
+      <td>${fmt(m.wholesale)}</td>
+      <td>${fmt(m.sticker)}</td>
+      <td>${fmt(m.discount)}</td>
+      <td><button class="btn ghost small" onclick="openMedModal('${m.id}')">دەستکاری</button></td>
+    </tr>`;
+  }).join('');
+}
+function daysUntilExpiry(dateStr){
+  if(!dateStr) return null;
+  const exp = new Date(dateStr+'T00:00:00');
+  const today = new Date(todayStr()+'T00:00:00');
+  return Math.round((exp-today)/(1000*60*60*24));
+}
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openMedModal(id){
+  document.getElementById('medModal').classList.add('show');
+  if(id){
+    const m = medicines.find(x=>x.id===id);
+    document.getElementById('medModalTitle').textContent='دەستکاریکردنی دەرمان';
+    document.getElementById('medId').value=m.id;
+    document.getElementById('medName').value=m.name;
+    document.getElementById('medBarcode').value=m.barcode;
+    document.getElementById('medType').value=m.type;
+    document.getElementById('medExpiry').value=m.expiry||'';
+    document.getElementById('medPackSize').value=m.packSize;
+    document.getElementById('medTotalUnits').value=m.totalUnits;
+    document.getElementById('medUnitLabel').value=m.unitLabel;
+    document.getElementById('medWholesale').value=m.wholesale;
+    document.getElementById('medSticker').value=m.sticker;
+    document.getElementById('medDiscount').value=m.discount;
+    document.getElementById('medDeleteBtn').style.display='inline-block';
+  } else {
+    document.getElementById('medModalTitle').textContent='زیادکردنی دەرمانی نوێ';
+    document.getElementById('medId').value='';
+    document.getElementById('medName').value='';
+    document.getElementById('medBarcode').value='';
+    document.getElementById('medType').value='حەب (Tablet)';
+    document.getElementById('medExpiry').value='';
+    document.getElementById('medPackSize').value=1;
+    document.getElementById('medTotalUnits').value=0;
+    document.getElementById('medUnitLabel').value='دانە';
+    document.getElementById('medWholesale').value=0;
+    document.getElementById('medSticker').value=0;
+    document.getElementById('medDiscount').value=0;
+    document.getElementById('medDeleteBtn').style.display='none';
+  }
+}
+function closeMedModal(){ document.getElementById('medModal').classList.remove('show'); }
+function genBarcode(){
+  let code;
+  do{ code = Math.floor(100000000000+Math.random()*900000000000).toString(); }
+  while(medicines.some(m=>m.barcode===code));
+  document.getElementById('medBarcode').value = code;
+}
+function saveMed(){
+  const name = document.getElementById('medName').value.trim();
+  if(!name){ alert('تکایە ناوی دەرمان بنووسە'); return; }
+  const id = document.getElementById('medId').value;
+  let barcode = document.getElementById('medBarcode').value.trim();
+  if(!barcode){
+    do{ barcode = Math.floor(100000000000+Math.random()*900000000000).toString(); }
+    while(medicines.some(m=>m.barcode===barcode));
+  }
+  const data = {
+    id: id || uid(),
+    name,
+    barcode,
+    type: document.getElementById('medType').value,
+    expiry: document.getElementById('medExpiry').value,
+    packSize: Math.max(1, parseInt(document.getElementById('medPackSize').value)||1),
+    totalUnits: Math.max(0, parseInt(document.getElementById('medTotalUnits').value)||0),
+    unitLabel: document.getElementById('medUnitLabel').value.trim() || 'دانە',
+    wholesale: parseFloat(document.getElementById('medWholesale').value)||0,
+    sticker: parseFloat(document.getElementById('medSticker').value)||0,
+    discount: parseFloat(document.getElementById('medDiscount').value)||0,
+  };
+  if(id){
+    const idx = medicines.findIndex(m=>m.id===id);
+    medicines[idx] = data;
+  } else {
+    medicines.push(data);
+  }
+  saveMeds(medicines);
+  closeMedModal();
+  renderWarehouse();
+}
+function deleteMed(){
+  const id = document.getElementById('medId').value;
+  if(!id) return;
+  if(!confirm('دڵنیای لە سڕینەوەی ئەم دەرمانە؟')) return;
+  medicines = medicines.filter(m=>m.id!==id);
+  saveMeds(medicines);
+  closeMedModal();
+  renderWarehouse();
+}
+
+/* ===================== SALES VIEW ===================== */
+function renderSaleSearchResults(){
+  const q = document.getElementById('saleSearch').value.trim();
+  const box = document.getElementById('saleSearchResults');
+  if(!q){ box.innerHTML=''; return; }
+  const results = findMedByBarcodeOrName(q).slice(0,8);
+  if(results.length===0){
+    box.innerHTML = '<div class="empty">هیچ دەرمانێک نەدۆزرایەوە</div>';
+    return;
+  }
+  box.innerHTML = '<div class="tblWrap" style="max-height:220px;margin-top:10px;"><table><tbody>' +
+    results.map(m=>`<tr style="cursor:pointer" onclick="pickMedForSale('${m.id}')">
+      <td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.barcode)}</td><td>${stockDisplay(m)}</td>
+    </tr>`).join('') + '</tbody></table></div>';
+}
+function trySaleSearchDirect(){
+  const q = document.getElementById('saleSearch').value.trim();
+  const exact = medicines.find(m=>m.barcode===q);
+  if(exact) pickMedForSale(exact.id);
+}
+function pickMedForSale(id){
+  const m = medicines.find(x=>x.id===id);
+  if(!m) return;
+  currentPick = m;
+  selectedPriceType = 'sticker';
+  document.getElementById('salePickCard').style.display='block';
+  document.getElementById('salePickName').textContent = m.name + ' — ماوەی کۆگا: ' + stockDisplay(m);
+  document.getElementById('saleQtyLabel').textContent = 'بڕی فرۆشتن ('+m.unitLabel+')';
+  document.getElementById('saleQty').value = 1;
+  document.getElementById('saleQty').max = m.totalUnits;
+  renderPriceChoice();
+}
+function renderPriceChoice(){
+  const box = document.getElementById('salePriceChoice');
+  const m = currentPick;
+  const opts = [
+    {key:'wholesale', label:'نرخی کۆگا', val:m.wholesale},
+    {key:'sticker', label:'نرخی ستیکەر', val:m.sticker},
+    {key:'discount', label:'نرخی داشکان', val:m.discount},
+  ];
+  box.innerHTML = opts.map(o=>`<div class="priceBtn ${selectedPriceType===o.key?'sel':''}" onclick="selectPrice('${o.key}')">
+    <small>${o.label}</small><b>${fmt(o.val)}</b>
+  </div>`).join('');
+}
+function selectPrice(key){ selectedPriceType = key; renderPriceChoice(); }
+function addToCart(){
+  if(!currentPick) return;
+  const qty = parseInt(document.getElementById('saleQty').value)||0;
+  if(qty<=0){ alert('بڕ دروست نییە'); return; }
+  const alreadyInCart = cart.filter(c=>c.medId===currentPick.id).reduce((a,c)=>a+c.qty,0);
+  if(qty + alreadyInCart > currentPick.totalUnits){ alert('بڕی داواکراو زیاترە لە بڕی مابوو لە کۆگا'); return; }
+  const priceVal = currentPick[selectedPriceType];
+  cart.push({
+    medId: currentPick.id,
+    name: currentPick.name,
+    unitLabel: currentPick.unitLabel,
+    qty,
+    priceType: selectedPriceType,
+    priceLabel: selectedPriceType==='wholesale'?'نرخی کۆگا':selectedPriceType==='sticker'?'نرخی ستیکەر':'نرخی داشکان',
+    priceValue: priceVal,
+    barcode: currentPick.barcode
+  });
+  document.getElementById('salePickCard').style.display='none';
+  document.getElementById('saleSearch').value='';
+  document.getElementById('saleSearchResults').innerHTML='';
+  currentPick=null;
+  renderCart();
+}
+function renderCart(){
+  const box = document.getElementById('cartBox');
+  if(cart.length===0){ box.innerHTML='<div class="empty">هیچ شتێک زیاد نەکراوە</div>'; document.getElementById('cartTotal').textContent='کۆی گشتی: 0'; return; }
+  let total=0;
+  box.innerHTML = cart.map((c,i)=>{
+    const sub = c.qty*c.priceValue;
+    total+=sub;
+    return `<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line);">
+      <div>${escapeHtml(c.name)} — ${c.qty} ${c.unitLabel} × ${fmt(c.priceValue)} (${c.priceLabel})</div>
+      <div class="row" style="gap:8px;"><b>${fmt(sub)}</b><button class="btn danger small" onclick="removeFromCart(${i})">✕</button></div>
+    </div>`;
+  }).join('');
+  document.getElementById('cartTotal').textContent = 'کۆی گشتی: '+fmt(total);
+}
+function removeFromCart(i){ cart.splice(i,1); renderCart(); }
+function toggleDebtorField(){
+  const type = document.getElementById('saleType').value;
+  document.getElementById('debtorField').style.display = type==='debt' ? 'block' : 'none';
+  if(type==='debt'){
+    const names = [...new Set(sales.filter(s=>s.type==='debt').map(s=>s.debtorName))];
+    document.getElementById('debtorList').innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
+  }
+}
+function finalizeSale(){
+  if(cart.length===0){ alert('سەبەتە بەتاڵە'); return; }
+  const type = document.getElementById('saleType').value;
+  let debtorName='';
+  if(type==='debt'){
+    debtorName = document.getElementById('debtorName').value.trim();
+    if(!debtorName){ alert('تکایە ناوی نەخۆش بنووسە'); return; }
+  }
+  // deduct stock
+  cart.forEach(c=>{
+    const m = medicines.find(x=>x.id===c.medId);
+    if(m){ m.totalUnits = Math.max(0, m.totalUnits - c.qty); }
+  });
+  saveMeds(medicines);
+
+  const total = cart.reduce((a,c)=>a+c.qty*c.priceValue,0);
+  const saleRecord = {
+    id: uid(),
+    date: todayStr(),
+    time: nowTimeStr(),
+    items: cart.map(c=>({...c})),
+    total,
+    type,
+    debtorName,
+    paid: type==='debt' ? false : true
+  };
+  sales.push(saleRecord);
+  saveSales(sales);
+
+  showReceipt(saleRecord);
+
+  cart = [];
+  renderCart();
+  document.getElementById('saleType').value='cash';
+  toggleDebtorField();
+  if(document.getElementById('debtorName')) document.getElementById('debtorName').value='';
+  renderWarehouse();
+}
+
+/* ===================== RECEIPT ===================== */
+function showReceipt(sale){
+  const html = buildReceiptHtml(sale);
+  document.getElementById('receiptPreview').innerHTML = html;
+  document.getElementById('printArea').innerHTML = html;
+  document.getElementById('receiptModal').classList.add('show');
+}
+function buildReceiptHtml(sale){
+  const rows = sale.items.map(it=>`<tr>
+      <td style="padding:4px 0;">${escapeHtml(it.name)}</td>
+      <td style="padding:4px 0;text-align:center;">${it.qty} ${it.unitLabel}</td>
+      <td style="padding:4px 0;text-align:left;">${fmt(it.priceValue)}</td>
+    </tr>`).join('');
+  return `
+    <div style="text-align:center;margin-bottom:10px;">
+      <div style="font-size:17px;font-weight:800;">${escapeHtml(settings.pharmacyName)}</div>
+      <div style="font-size:12px;color:#666;">${escapeHtml(settings.address||'')}</div>
+    </div>
+    <div style="font-size:12px;display:flex;justify-content:space-between;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin-bottom:8px;">
+      <span>بەروار: ${sale.date}</span><span>کات: ${sale.time}</span>
+    </div>
+    ${sale.type==='debt' ? `<div style="font-size:12.5px;margin-bottom:6px;">جۆر: قەرز — ناوی نەخۆش: ${escapeHtml(sale.debtorName)}</div>` : `<div style="font-size:12.5px;margin-bottom:6px;">جۆر: نەقد</div>`}
+    <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
+      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">دەرمان</th><th>بڕ</th><th style="text-align:left;">نرخ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;text-align:left;font-weight:800;">
+      کۆی گشتی: ${fmt(sale.total)}
+    </div>`;
+}
+function closeReceiptModal(){ document.getElementById('receiptModal').classList.remove('show'); }
+function printReceipt(){ window.print(); }
+
+/* ===================== DEBT VIEW ===================== */
+function renderDebtList(){
+  const q = (document.getElementById('debtSearch').value||'').trim().toLowerCase();
+  const tbody = document.getElementById('debtTableBody');
+  let debtSales = sales.filter(s=>s.type==='debt');
+  if(q) debtSales = debtSales.filter(s=>s.debtorName.toLowerCase().includes(q));
+  debtSales.sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+  if(debtSales.length===0){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">هیچ قەرزێک تۆمار نەکراوە</td></tr>';
+    return;
+  }
+  let out='';
+  debtSales.forEach(s=>{
+    s.items.forEach(it=>{
+      const cls = s.paid ? 'strike' : '';
+      out += `<tr class="${cls}">
+        <td>${escapeHtml(s.debtorName)}</td>
+        <td>${escapeHtml(it.name)}</td>
+        <td>${it.qty} ${it.unitLabel}</td>
+        <td>${fmt(it.qty*it.priceValue)}</td>
+        <td>${s.date} ${s.time}</td>
+        <td>${s.paid ? '<span class="badge green">دراوەتەوە</span>' : '<span class="badge red">وەسڵ نەکراوە</span>'}</td>
+        <td>${s.paid ? '' : `<button class="btn ok small" onclick="markDebtPaid('${s.id}')">وەسڵکردن</button>`}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = out;
+}
+function markDebtPaid(saleId){
+  const s = sales.find(x=>x.id===saleId);
+  if(!s) return;
+  s.paid = true;
+  saveSales(sales);
+  renderDebtList();
+}
+
+/* ===================== REPORTS VIEW ===================== */
+function renderReport(){
+  const date = document.getElementById('reportDate').value || todayStr();
+  const daySales = sales.filter(s=>s.date===date);
+  const cashTotal = daySales.filter(s=>s.type==='cash').reduce((a,s)=>a+s.total,0);
+  const debtTotal = daySales.filter(s=>s.type==='debt').reduce((a,s)=>a+s.total,0);
+  const grand = cashTotal+debtTotal;
+  document.getElementById('reportKpis').innerHTML = `
+    <div class="kpi"><span>کۆی گشتی فرۆشراو</span><b>${fmt(grand)}</b></div>
+    <div class="kpi"><span>نەقد</span><b>${fmt(cashTotal)}</b></div>
+    <div class="kpi"><span>قەرز</span><b>${fmt(debtTotal)}</b></div>
+    <div class="kpi"><span>ژمارەی مامەڵە</span><b>${daySales.length}</b></div>
+  `;
+  const tbody = document.getElementById('reportTableBody');
+  if(daySales.length===0){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">هیچ فرۆشتنێک لەم ڕۆژە تۆمار نەکراوە</td></tr>';
+    return;
+  }
+  let out='';
+  daySales.sort((a,b)=>b.time.localeCompare(a.time)).forEach(s=>{
+    s.items.forEach(it=>{
+      out += `<tr>
+        <td>${s.time}</td>
+        <td>${escapeHtml(it.name)}</td>
+        <td>${it.qty} ${it.unitLabel}</td>
+        <td>${fmt(it.qty*it.priceValue)}</td>
+        <td>${s.type==='cash'?'نەقد':'قەرز'}</td>
+        <td>${s.type==='debt'?escapeHtml(s.debtorName):'—'}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = out;
+}
+
+/* ===================== EXPIRY VIEW ===================== */
+function renderExpiry(){
+  const tbody = document.getElementById('expiryTableBody');
+  const list = medicines
+    .map(m=>({m, days:daysUntilExpiry(m.expiry)}))
+    .filter(x=>x.days!==null && x.days<=60)
+    .sort((a,b)=>a.days-b.days);
+  if(list.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">هیچ دەرمانێک نزیک نییە لە بەسەرچوون</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(x=>{
+    const badge = x.days<0 ? '<span class="badge red">بەسەرچووە</span>' : (x.days<=14 ? `<span class="badge red">${x.days} ڕۆژ</span>` : `<span class="badge orange">${x.days} ڕۆژ</span>`);
+    return `<tr>
+      <td>${escapeHtml(x.m.name)}</td>
+      <td>${x.m.expiry}</td>
+      <td>${badge}</td>
+      <td>${stockDisplay(x.m)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===================== SETTINGS VIEW ===================== */
+function fillSettingsForm(){
+  document.getElementById('setPharmName').value = settings.pharmacyName;
+  document.getElementById('setAddress').value = settings.address;
+  document.getElementById('setColorPrimary').value = settings.colorPrimary;
+  document.getElementById('setColorAccent').value = settings.colorAccent;
+}
+function saveGeneralSettings(){
+  settings.pharmacyName = document.getElementById('setPharmName').value.trim() || settings.pharmacyName;
+  settings.address = document.getElementById('setAddress').value.trim();
+  saveSettings(settings);
+  document.getElementById('loginPharmName').textContent = settings.pharmacyName;
+  alert('پاشەکەوت کرا');
+}
+function applyColors(persist){
+  settings.colorPrimary = document.getElementById('setColorPrimary').value;
+  settings.colorAccent = document.getElementById('setColorAccent').value;
+  applyColorVars();
+  if(persist){ saveSettings(settings); alert('ڕەنگەکان پاشەکەوت کران'); }
+}
+function savePasswords(){
+  const mp = document.getElementById('setManagerPass').value;
+  const ep = document.getElementById('setEmployeePass').value;
+  if(mp) settings.managerPass = mp;
+  if(ep) settings.employeePass = ep;
+  saveSettings(settings);
+  document.getElementById('setManagerPass').value='';
+  document.getElementById('setEmployeePass').value='';
+  alert('ووشە نهێنیەکان نوێ کرانەوە');
+}
+function resetAllData(){
+  if(!confirm('ئایا دڵنیای؟ هەموو داتای کۆگا، فرۆشتن و قەرزەکان دەسڕدرێتەوە!')) return;
+  if(!confirm('دووبارە دڵنیابەرەوە: ئەم کردارە ناگەڕێتەوە.')) return;
+  medicines = [];
+  sales = [];
+  saveMeds(medicines);
+  saveSales(sales);
+  renderWarehouse();
+  alert('هەموو داتا سڕدرایەوە');
+}
+
+/* ===================== INIT ===================== */
+(function init(){
+  applyColorVars();
+  document.getElementById('loginPharmName').textContent = settings.pharmacyName;
+  document.getElementById('sideBrand').textContent = settings.pharmacyName;
+  document.getElementById('reportDate').value = todayStr();
+})();
+</script>
+</body>
+</html>
