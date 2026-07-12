@@ -247,12 +247,42 @@
     #printArea, #printArea *{visibility:visible;}
     #printArea{display:block;position:absolute;top:0;right:0;left:0;padding:20px;}
   }
+
+  /* ---------- LOADING / SYNC ---------- */
+  #loadingScreen{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 55%, #06264a 100%);
+    color:#fff;
+    gap:14px;
+  }
+  .spinner{
+    width:40px;height:40px;border-radius:50%;
+    border:4px solid rgba(255,255,255,.3);
+    border-top-color:#fff;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #connErr{
+    display:none;background:#fdecea;color:var(--danger);
+    padding:10px 16px;border-radius:10px;font-size:13px;max-width:320px;text-align:center;
+  }
 </style>
 </head>
 <body>
 
+<!-- ===================== LOADING ===================== -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <div>پەیوەندی بە داتابەیسی هەمبەشەوە دەکرێت...</div>
+  <div id="connErr">نەتوانرا پەیوەندی بکرێت بە داتابەیس. تکایە ئینتەرنێت بپشکنە و لاپەڕەکە نوێ بکەرەوە.</div>
+</div>
+
 <!-- ===================== LOGIN ===================== -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none;">
   <div class="loginCard">
     <h1 id="loginPharmName">سیستەمی سەیدەلیە</h1>
     <p class="sub">تکایە جۆری بەکارهێنەر و ووشەی نهێنی داخڵ بکە</p>
@@ -514,10 +544,23 @@
 
 <div id="printArea"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* ===================== STORAGE ===================== */
-const LS_SETTINGS='phx_settings', LS_MEDS='phx_medicines', LS_SALES='phx_sales';
+/* ===================== FIREBASE ===================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCTu4lNCVrL6OhY8MCbNlXNyBgdhkYfMt0",
+  authDomain: "pharmacy-data-d2b6d.firebaseapp.com",
+  projectId: "pharmacy-data-d2b6d",
+  storageBucket: "pharmacy-data-d2b6d.firebasestorage.app",
+  messagingSenderId: "319073088192",
+  appId: "1:319073088192:web:081fa3f6f4423ee26c3325",
+  measurementId: "G-5Q6T5PZFX6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
+/* ===================== SETTINGS / DATA (CLOUD) ===================== */
 function defaultSettings(){
   return {
     pharmacyName:'سەیدەلیەکەم',
@@ -528,19 +571,40 @@ function defaultSettings(){
     employeePass:'1234'
   };
 }
-function loadSettings(){
-  const s = localStorage.getItem(LS_SETTINGS);
-  return s ? JSON.parse(s) : defaultSettings();
+async function initSettings(){
+  const ref = db.collection('config').doc('settings');
+  const snap = await ref.get();
+  if(snap.exists){
+    settings = Object.assign(defaultSettings(), snap.data());
+  } else {
+    settings = defaultSettings();
+    await ref.set(settings);
+  }
 }
-function saveSettings(s){ localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
-function loadMeds(){ const s = localStorage.getItem(LS_MEDS); return s ? JSON.parse(s) : []; }
-function saveMeds(m){ localStorage.setItem(LS_MEDS, JSON.stringify(m)); }
-function loadSales(){ const s = localStorage.getItem(LS_SALES); return s ? JSON.parse(s) : []; }
-function saveSales(s){ localStorage.setItem(LS_SALES, JSON.stringify(s)); }
+async function persistSettings(){
+  await db.collection('config').doc('settings').set(settings, {merge:true});
+}
+function startListeners(){
+  db.collection('medicines').onSnapshot(snap=>{
+    medicines = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
+  db.collection('sales').onSnapshot(snap=>{
+    sales = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
+}
+function safeRenderAll(){
+  if(document.getElementById('app').style.display==='none') return;
+  try{ renderWarehouse(); }catch(e){}
+  try{ renderExpiry(); }catch(e){}
+  try{ renderDebtList(); }catch(e){}
+  try{ renderReport(); }catch(e){}
+}
 
-let settings = loadSettings();
-let medicines = loadMeds();
-let sales = loadSales();
+let settings = defaultSettings();
+let medicines = [];
+let sales = [];
 let currentRole = null; // 'manager' | 'employee'
 let loginRoleChoice = 'manager';
 let cart = []; // {medId, name, unitLabel, qty, priceType, priceValue, barcode}
@@ -728,7 +792,7 @@ function genBarcode(){
   while(medicines.some(m=>m.barcode===code));
   document.getElementById('medBarcode').value = code;
 }
-function saveMed(){
+async function saveMed(){
   const name = document.getElementById('medName').value.trim();
   if(!name){ alert('تکایە ناوی دەرمان بنووسە'); return; }
   const id = document.getElementById('medId').value;
@@ -750,24 +814,25 @@ function saveMed(){
     sticker: parseFloat(document.getElementById('medSticker').value)||0,
     discount: parseFloat(document.getElementById('medDiscount').value)||0,
   };
-  if(id){
-    const idx = medicines.findIndex(m=>m.id===id);
-    medicines[idx] = data;
-  } else {
-    medicines.push(data);
+  try{
+    await db.collection('medicines').doc(data.id).set(data);
+  }catch(e){
+    alert('هەڵە لە پاشەکەوتکردن: '+e.message);
+    return;
   }
-  saveMeds(medicines);
   closeMedModal();
-  renderWarehouse();
 }
-function deleteMed(){
+async function deleteMed(){
   const id = document.getElementById('medId').value;
   if(!id) return;
   if(!confirm('دڵنیای لە سڕینەوەی ئەم دەرمانە؟')) return;
-  medicines = medicines.filter(m=>m.id!==id);
-  saveMeds(medicines);
+  try{
+    await db.collection('medicines').doc(id).delete();
+  }catch(e){
+    alert('هەڵە: '+e.message);
+    return;
+  }
   closeMedModal();
-  renderWarehouse();
 }
 
 /* ===================== SALES VIEW ===================== */
@@ -861,7 +926,7 @@ function toggleDebtorField(){
     document.getElementById('debtorList').innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">`).join('');
   }
 }
-function finalizeSale(){
+async function finalizeSale(){
   if(cart.length===0){ alert('سەبەتە بەتاڵە'); return; }
   const type = document.getElementById('saleType').value;
   let debtorName='';
@@ -869,13 +934,6 @@ function finalizeSale(){
     debtorName = document.getElementById('debtorName').value.trim();
     if(!debtorName){ alert('تکایە ناوی نەخۆش بنووسە'); return; }
   }
-  // deduct stock
-  cart.forEach(c=>{
-    const m = medicines.find(x=>x.id===c.medId);
-    if(m){ m.totalUnits = Math.max(0, m.totalUnits - c.qty); }
-  });
-  saveMeds(medicines);
-
   const total = cart.reduce((a,c)=>a+c.qty*c.priceValue,0);
   const saleRecord = {
     id: uid(),
@@ -887,8 +945,27 @@ function finalizeSale(){
     debtorName,
     paid: type==='debt' ? false : true
   };
-  sales.push(saleRecord);
-  saveSales(sales);
+
+  try{
+    await db.runTransaction(async (tx)=>{
+      const medRefs = cart.map(c=>db.collection('medicines').doc(c.medId));
+      const medDocs = await Promise.all(medRefs.map(r=>tx.get(r)));
+      const newTotals = [];
+      for(let i=0;i<cart.length;i++){
+        const d = medDocs[i];
+        if(!d.exists) throw new Error('دەرمانی '+cart[i].name+' نەماوە لە کۆگا');
+        const cur = d.data().totalUnits;
+        const nt = cur - cart[i].qty;
+        if(nt<0) throw new Error('بڕی کۆگای '+cart[i].name+' پێویست نییە');
+        newTotals.push(nt);
+      }
+      medRefs.forEach((ref,i)=> tx.update(ref, {totalUnits:newTotals[i]}));
+      tx.set(db.collection('sales').doc(saleRecord.id), saleRecord);
+    });
+  }catch(e){
+    alert('هەڵە لە تەواوکردنی فرۆشتن: '+e.message);
+    return;
+  }
 
   showReceipt(saleRecord);
 
@@ -897,7 +974,6 @@ function finalizeSale(){
   document.getElementById('saleType').value='cash';
   toggleDebtorField();
   if(document.getElementById('debtorName')) document.getElementById('debtorName').value='';
-  renderWarehouse();
 }
 
 /* ===================== RECEIPT ===================== */
@@ -961,12 +1037,12 @@ function renderDebtList(){
   });
   tbody.innerHTML = out;
 }
-function markDebtPaid(saleId){
-  const s = sales.find(x=>x.id===saleId);
-  if(!s) return;
-  s.paid = true;
-  saveSales(sales);
-  renderDebtList();
+async function markDebtPaid(saleId){
+  try{
+    await db.collection('sales').doc(saleId).update({paid:true});
+  }catch(e){
+    alert('هەڵە: '+e.message);
+  }
 }
 
 /* ===================== REPORTS VIEW ===================== */
@@ -1032,46 +1108,62 @@ function fillSettingsForm(){
   document.getElementById('setColorPrimary').value = settings.colorPrimary;
   document.getElementById('setColorAccent').value = settings.colorAccent;
 }
-function saveGeneralSettings(){
+async function saveGeneralSettings(){
   settings.pharmacyName = document.getElementById('setPharmName').value.trim() || settings.pharmacyName;
   settings.address = document.getElementById('setAddress').value.trim();
-  saveSettings(settings);
+  try{ await persistSettings(); }catch(e){ alert('هەڵە: '+e.message); return; }
   document.getElementById('loginPharmName').textContent = settings.pharmacyName;
+  document.getElementById('sideBrand').textContent = settings.pharmacyName;
   alert('پاشەکەوت کرا');
 }
-function applyColors(persist){
+async function applyColors(persist){
   settings.colorPrimary = document.getElementById('setColorPrimary').value;
   settings.colorAccent = document.getElementById('setColorAccent').value;
   applyColorVars();
-  if(persist){ saveSettings(settings); alert('ڕەنگەکان پاشەکەوت کران'); }
+  if(persist){
+    try{ await persistSettings(); alert('ڕەنگەکان پاشەکەوت کران'); }
+    catch(e){ alert('هەڵە: '+e.message); }
+  }
 }
-function savePasswords(){
+async function savePasswords(){
   const mp = document.getElementById('setManagerPass').value;
   const ep = document.getElementById('setEmployeePass').value;
   if(mp) settings.managerPass = mp;
   if(ep) settings.employeePass = ep;
-  saveSettings(settings);
+  try{ await persistSettings(); }catch(e){ alert('هەڵە: '+e.message); return; }
   document.getElementById('setManagerPass').value='';
   document.getElementById('setEmployeePass').value='';
   alert('ووشە نهێنیەکان نوێ کرانەوە');
 }
-function resetAllData(){
+async function resetAllData(){
   if(!confirm('ئایا دڵنیای؟ هەموو داتای کۆگا، فرۆشتن و قەرزەکان دەسڕدرێتەوە!')) return;
   if(!confirm('دووبارە دڵنیابەرەوە: ئەم کردارە ناگەڕێتەوە.')) return;
-  medicines = [];
-  sales = [];
-  saveMeds(medicines);
-  saveSales(sales);
-  renderWarehouse();
+  try{
+    const medSnap = await db.collection('medicines').get();
+    const saleSnap = await db.collection('sales').get();
+    const batch = db.batch();
+    medSnap.docs.forEach(d=>batch.delete(d.ref));
+    saleSnap.docs.forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+  }catch(e){ alert('هەڵە: '+e.message); return; }
   alert('هەموو داتا سڕدرایەوە');
 }
 
 /* ===================== INIT ===================== */
-(function init(){
-  applyColorVars();
-  document.getElementById('loginPharmName').textContent = settings.pharmacyName;
-  document.getElementById('sideBrand').textContent = settings.pharmacyName;
-  document.getElementById('reportDate').value = todayStr();
+(async function init(){
+  try{
+    await initSettings();
+    applyColorVars();
+    document.getElementById('loginPharmName').textContent = settings.pharmacyName;
+    document.getElementById('sideBrand').textContent = settings.pharmacyName;
+    document.getElementById('reportDate').value = todayStr();
+    startListeners();
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+  }catch(e){
+    console.error(e);
+    document.getElementById('connErr').style.display='block';
+  }
 })();
 </script>
 </body>
