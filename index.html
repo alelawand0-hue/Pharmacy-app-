@@ -345,7 +345,10 @@
         <div class="topbar"><h2>🧾 فرۆشتن</h2></div>
         <div class="card">
           <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
-          <input type="text" id="saleSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderSaleSearchResults()" onkeydown="if(event.key==='Enter')trySaleSearchDirect()">
+          <div class="row">
+            <input type="text" id="saleSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderSaleSearchResults()" onkeydown="if(event.key==='Enter')trySaleSearchDirect()">
+            <button class="btn blue small" type="button" onclick="openScanner('saleSearch', ()=>trySaleSearchDirect())">📷 سکان</button>
+          </div>
           <div id="saleSearchResults"></div>
         </div>
 
@@ -393,7 +396,10 @@
         <div class="topbar"><h2>↩️ گەڕاندنەوەی دەرمان</h2></div>
         <div class="card">
           <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
-          <input type="text" id="returnSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderReturnSearchResults()" onkeydown="if(event.key==='Enter')tryReturnSearchDirect()">
+          <div class="row">
+            <input type="text" id="returnSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderReturnSearchResults()" onkeydown="if(event.key==='Enter')tryReturnSearchDirect()">
+            <button class="btn blue small" type="button" onclick="openScanner('returnSearch', ()=>tryReturnSearchDirect())">📷 سکان</button>
+          </div>
           <div id="returnSearchResults"></div>
         </div>
 
@@ -549,7 +555,7 @@
       <div class="field"><label class="lbl">ناوی دەرمان *</label><input type="text" id="medName"></div>
       <div class="field">
         <label class="lbl">بارکۆد</label>
-        <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()">دروستکردن</button></div>
+        <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()">دروستکردن</button><button class="btn blue small" type="button" onclick="openScanner('medBarcode')">📷 سکان</button></div>
       </div>
     </div>
     <div class="grid2">
@@ -611,10 +617,21 @@
   </div>
 </div>
 
+<!-- ===================== BARCODE SCANNER MODAL ===================== -->
+<div class="modalBg" id="scannerModal">
+  <div class="modalCard" style="max-width:420px;">
+    <h3>سکانکردنی بارکۆد</h3>
+    <div id="scannerRegion" style="width:100%;border-radius:10px;overflow:hidden;background:#000;min-height:220px;"></div>
+    <div id="scannerHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center;">کامێراکە بەرەو بارکۆدەکە ڕابگرە</div>
+    <button class="btn ghost" style="width:100%;margin-top:12px;" onclick="closeScanner()">داخستن</button>
+  </div>
+</div>
+
 <div id="printArea"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 /* ===================== FIREBASE ===================== */
 const firebaseConfig = {
@@ -867,6 +884,46 @@ function genBarcode(){
   do{ code = Math.floor(100000000000+Math.random()*900000000000).toString(); }
   while(medicines.some(m=>m.barcode===code));
   document.getElementById('medBarcode').value = code;
+}
+
+/* ===================== BARCODE CAMERA SCANNER ===================== */
+let scannerInstance = null;
+let scannerTargetInputId = null;
+let scannerOnScanned = null;
+function openScanner(targetInputId, onScanned){
+  scannerTargetInputId = targetInputId;
+  scannerOnScanned = onScanned || null;
+  document.getElementById('scannerModal').classList.add('show');
+  document.getElementById('scannerHint').textContent = 'کامێراکە بەرەو بارکۆدەکە ڕابگرە';
+  if(typeof Html5Qrcode === 'undefined'){
+    document.getElementById('scannerHint').textContent = 'کامێرا بارنەبووە. تکایە ئینتەرنێت بپشکنە.';
+    return;
+  }
+  scannerInstance = new Html5Qrcode("scannerRegion");
+  scannerInstance.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 240, height: 140 } },
+    (decodedText)=>{
+      if(scannerTargetInputId){
+        document.getElementById(scannerTargetInputId).value = decodedText;
+      }
+      const cb = scannerOnScanned;
+      closeScanner();
+      if(cb) cb(decodedText);
+    },
+    ()=>{ /* per-frame scan miss, ignore */ }
+  ).catch(err=>{
+    document.getElementById('scannerHint').textContent = 'ناتوانرێت کامێرا بکرێتەوە. ڕێگە بدە بە کامێرا لە وێبگەڕ، یان دەستی بارکۆدەکە بنووسە.';
+  });
+}
+function closeScanner(){
+  document.getElementById('scannerModal').classList.remove('show');
+  if(scannerInstance){
+    scannerInstance.stop().then(()=>{
+      scannerInstance.clear();
+      scannerInstance = null;
+    }).catch(()=>{ scannerInstance = null; });
+  }
 }
 async function saveMed(){
   const name = document.getElementById('medName').value.trim();
