@@ -307,6 +307,7 @@
       <div class="roleTag" id="sideRole">—</div>
       <button class="navBtn" data-view="warehouse" onclick="switchView('warehouse')"><span class="ic">📦</span> کۆگا</button>
       <button class="navBtn" data-view="sales" onclick="switchView('sales')"><span class="ic">🧾</span> فرۆشتن</button>
+      <button class="navBtn" data-view="returns" onclick="switchView('returns')"><span class="ic">↩️</span> گەڕاندنەوە</button>
       <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> قەرز</button>
       <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> راپۆرت</button>
       <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> ئێکسپایەر</button>
@@ -387,6 +388,53 @@
         </div>
       </section>
 
+      <!-- ============ RETURNS ============ -->
+      <section id="view-returns" style="display:none;">
+        <div class="topbar"><h2>↩️ گەڕاندنەوەی دەرمان</h2></div>
+        <div class="card">
+          <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
+          <input type="text" id="returnSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderReturnSearchResults()" onkeydown="if(event.key==='Enter')tryReturnSearchDirect()">
+          <div id="returnSearchResults"></div>
+        </div>
+
+        <div class="card" id="returnPickCard" style="display:none;">
+          <div class="cardTitle" id="returnPickName"></div>
+          <label class="lbl">نرخێک هەڵبژێرە کە پێی فرۆشراوە (بۆ گەڕاندنەوەی پارە)</label>
+          <div class="priceChoice" id="returnPriceChoice"></div>
+          <div class="grid2">
+            <div class="field">
+              <label class="lbl" id="returnQtyLabel">بڕی گەڕاندراوە</label>
+              <input type="number" id="returnQty" min="1" value="1">
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end;">
+              <button class="btn blue" style="width:100%;" onclick="addToReturnCart()">+ زیادکردن بۆ سەبەتەی گەڕاندنەوە</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle">سەبەتەی گەڕاندنەوە</div>
+          <div id="returnCartBox" class="cartBox"><div class="empty">هیچ شتێک زیاد نەکراوە</div></div>
+          <div class="row between" style="margin-top:14px;">
+            <b id="returnCartTotal">کۆی پارەی گەڕاندنەوە: 0</b>
+          </div>
+          <button class="btn blue" style="margin-top:12px;" onclick="finalizeReturn()">✔️ تەواوکردنی گەڕاندنەوە</button>
+        </div>
+
+        <div class="card">
+          <div class="row between">
+            <div class="cardTitle">مێژووی گەڕاندنەوەکان</div>
+            <b id="returnsGrandTotal" style="color:var(--primary-dark);"></b>
+          </div>
+          <div class="tblWrap">
+            <table>
+              <thead><tr><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>کۆی گەڕاوە</th><th>بەروار / کات</th></tr></thead>
+              <tbody id="returnsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ DEBT ============ -->
       <section id="view-debt" style="display:none;">
         <div class="topbar"><h2>💳 قەرز</h2></div>
@@ -419,6 +467,15 @@
             <table>
               <thead><tr><th>کات</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>جۆر</th><th>نەخۆش</th></tr></thead>
               <tbody id="reportTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="cardTitle">گەڕاندنەوەکانی ئەم ڕۆژە</div>
+          <div class="tblWrap">
+            <table>
+              <thead><tr><th>کات</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>نەخۆش</th></tr></thead>
+              <tbody id="reportReturnsTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -542,6 +599,18 @@
   </div>
 </div>
 
+<!-- ===================== RETURN CONFIRMATION MODAL ===================== -->
+<div class="modalBg" id="returnModal">
+  <div class="modalCard" style="max-width:380px;">
+    <h3>گەڕاندنەوە تەواو بوو</h3>
+    <div id="returnPreview" style="border:1px dashed var(--line);border-radius:10px;padding:14px;font-size:13.5px;"></div>
+    <div class="row" style="gap:8px;margin-top:16px;">
+      <button class="btn ghost" style="flex:1;" onclick="closeReturnModal()">داخستن</button>
+      <button class="btn blue" style="flex:1;" onclick="printReturnReceipt()">🖨️ چاپکردن</button>
+    </div>
+  </div>
+</div>
+
 <div id="printArea"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -593,6 +662,10 @@ function startListeners(){
     sales = snap.docs.map(d=>d.data());
     safeRenderAll();
   }, err=>{ console.error(err); });
+  db.collection('returns').onSnapshot(snap=>{
+    returns = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
 }
 function safeRenderAll(){
   if(document.getElementById('app').style.display==='none') return;
@@ -600,11 +673,13 @@ function safeRenderAll(){
   try{ renderExpiry(); }catch(e){}
   try{ renderDebtList(); }catch(e){}
   try{ renderReport(); }catch(e){}
+  try{ renderReturnsList(); }catch(e){}
 }
 
 let settings = defaultSettings();
 let medicines = [];
 let sales = [];
+let returns = [];
 let currentRole = null; // 'manager' | 'employee'
 let loginRoleChoice = 'manager';
 let cart = []; // {medId, name, unitLabel, qty, priceType, priceValue, barcode}
@@ -646,7 +721,7 @@ function logout(){
 }
 
 function applyPermissions(){
-  const allowedEmployee=['warehouse','sales','expiry'];
+  const allowedEmployee=['warehouse','sales','returns','expiry'];
   document.querySelectorAll('.navBtn').forEach(btn=>{
     const v = btn.getAttribute('data-view');
     if(currentRole==='employee' && !allowedEmployee.includes(v)){
@@ -659,12 +734,13 @@ function applyPermissions(){
 
 /* ===================== NAV ===================== */
 function switchView(name){
-  if(currentRole==='employee' && !['warehouse','sales','expiry'].includes(name)) return;
+  if(currentRole==='employee' && !['warehouse','sales','returns','expiry'].includes(name)) return;
   document.querySelectorAll('section[id^="view-"]').forEach(s=>s.style.display='none');
   document.getElementById('view-'+name).style.display='block';
   document.querySelectorAll('.navBtn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===name));
   if(name==='warehouse') renderWarehouse();
   if(name==='sales') { renderSaleSearchResults(); renderCart(); }
+  if(name==='returns') { renderReturnSearchResults(); renderReturnCart(); renderReturnsList(); }
   if(name==='debt') renderDebtList();
   if(name==='reports'){
     if(!document.getElementById('reportDate').value) document.getElementById('reportDate').value = todayStr();
@@ -1009,6 +1085,181 @@ function buildReceiptHtml(sale){
 function closeReceiptModal(){ document.getElementById('receiptModal').classList.remove('show'); }
 function printReceipt(){ window.print(); }
 
+/* ===================== RETURNS VIEW ===================== */
+let returnCart = [];
+let currentReturnPick = null;
+let selectedReturnPriceType = null;
+
+function renderReturnSearchResults(){
+  const q = document.getElementById('returnSearch').value.trim();
+  const box = document.getElementById('returnSearchResults');
+  if(!q){ box.innerHTML=''; return; }
+  const results = findMedByBarcodeOrName(q).slice(0,8);
+  if(results.length===0){
+    box.innerHTML = '<div class="empty">هیچ دەرمانێک نەدۆزرایەوە</div>';
+    return;
+  }
+  box.innerHTML = '<div class="tblWrap" style="max-height:220px;margin-top:10px;"><table><tbody>' +
+    results.map(m=>`<tr style="cursor:pointer" onclick="pickMedForReturn('${m.id}')">
+      <td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.type)}</td><td>${escapeHtml(m.barcode)}</td><td>${stockDisplay(m)}</td>
+    </tr>`).join('') + '</tbody></table></div>';
+}
+function tryReturnSearchDirect(){
+  const q = document.getElementById('returnSearch').value.trim();
+  const exact = medicines.find(m=>m.barcode===q);
+  if(exact) pickMedForReturn(exact.id);
+}
+function pickMedForReturn(id){
+  const m = medicines.find(x=>x.id===id);
+  if(!m) return;
+  currentReturnPick = m;
+  selectedReturnPriceType = 'sticker';
+  document.getElementById('returnPickCard').style.display='block';
+  document.getElementById('returnPickName').textContent = m.name + ' — ماوەی کۆگا: ' + stockDisplay(m);
+  document.getElementById('returnQtyLabel').textContent = 'بڕی گەڕاندراوە ('+m.unitLabel+')';
+  document.getElementById('returnQty').value = 1;
+  renderReturnPriceChoice();
+}
+function renderReturnPriceChoice(){
+  const box = document.getElementById('returnPriceChoice');
+  const m = currentReturnPick;
+  const opts = [
+    {key:'wholesale', label:'نرخی کۆگا', val:m.wholesale},
+    {key:'sticker', label:'نرخی ستیکەر', val:m.sticker},
+    {key:'discount', label:'نرخی داشکان', val:m.discount},
+  ];
+  box.innerHTML = opts.map(o=>`<div class="priceBtn ${selectedReturnPriceType===o.key?'sel':''}" onclick="selectReturnPrice('${o.key}')">
+    <small>${o.label}</small><b>${fmt(o.val)}</b>
+  </div>`).join('');
+}
+function selectReturnPrice(key){ selectedReturnPriceType = key; renderReturnPriceChoice(); }
+function addToReturnCart(){
+  if(!currentReturnPick) return;
+  const qty = parseInt(document.getElementById('returnQty').value)||0;
+  if(qty<=0){ alert('بڕ دروست نییە'); return; }
+  const priceVal = currentReturnPick[selectedReturnPriceType];
+  returnCart.push({
+    medId: currentReturnPick.id,
+    name: currentReturnPick.name,
+    unitLabel: currentReturnPick.unitLabel,
+    qty,
+    priceType: selectedReturnPriceType,
+    priceLabel: selectedReturnPriceType==='wholesale'?'نرخی کۆگا':selectedReturnPriceType==='sticker'?'نرخی ستیکەر':'نرخی داشکان',
+    priceValue: priceVal,
+    barcode: currentReturnPick.barcode
+  });
+  document.getElementById('returnPickCard').style.display='none';
+  document.getElementById('returnSearch').value='';
+  document.getElementById('returnSearchResults').innerHTML='';
+  currentReturnPick=null;
+  renderReturnCart();
+}
+function renderReturnCart(){
+  const box = document.getElementById('returnCartBox');
+  if(returnCart.length===0){ box.innerHTML='<div class="empty">هیچ شتێک زیاد نەکراوە</div>'; document.getElementById('returnCartTotal').textContent='کۆی پارەی گەڕاندنەوە: 0'; return; }
+  let total=0;
+  box.innerHTML = returnCart.map((c,i)=>{
+    const sub = c.qty*c.priceValue;
+    total+=sub;
+    return `<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line);">
+      <div>${escapeHtml(c.name)} — ${c.qty} ${c.unitLabel} × ${fmt(c.priceValue)} (${c.priceLabel})</div>
+      <div class="row" style="gap:8px;"><b>${fmt(sub)}</b><button class="btn danger small" onclick="removeFromReturnCart(${i})">✕</button></div>
+    </div>`;
+  }).join('');
+  document.getElementById('returnCartTotal').textContent = 'کۆی پارەی گەڕاندنەوە: '+fmt(total);
+}
+function removeFromReturnCart(i){ returnCart.splice(i,1); renderReturnCart(); }
+
+async function finalizeReturn(){
+  if(returnCart.length===0){ alert('سەبەتەی گەڕاندنەوە بەتاڵە'); return; }
+  const totalRefund = returnCart.reduce((a,c)=>a+c.qty*c.priceValue,0);
+  const returnRecord = {
+    id: uid(),
+    date: todayStr(),
+    time: nowTimeStr(),
+    items: returnCart.map(c=>({...c})),
+    totalRefund
+  };
+  try{
+    await db.runTransaction(async (tx)=>{
+      const medRefs = returnCart.map(c=>db.collection('medicines').doc(c.medId));
+      const medDocs = await Promise.all(medRefs.map(r=>tx.get(r)));
+      const newTotals = [];
+      for(let i=0;i<returnCart.length;i++){
+        const d = medDocs[i];
+        if(!d.exists) throw new Error('دەرمانی '+returnCart[i].name+' نەماوە لە کۆگا');
+        newTotals.push(d.data().totalUnits + returnCart[i].qty);
+      }
+      medRefs.forEach((ref,i)=> tx.update(ref, {totalUnits:newTotals[i]}));
+      tx.set(db.collection('returns').doc(returnRecord.id), returnRecord);
+    });
+  }catch(e){
+    alert('هەڵە لە تەواوکردنی گەڕاندنەوە: '+e.message);
+    return;
+  }
+  showReturnConfirmation(returnRecord);
+  returnCart = [];
+  renderReturnCart();
+}
+function buildReturnReceiptHtml(rec){
+  const rows = rec.items.map(it=>`<tr>
+      <td style="padding:4px 0;">${escapeHtml(it.name)}</td>
+      <td style="padding:4px 0;text-align:center;">${it.qty} ${it.unitLabel}</td>
+      <td style="padding:4px 0;text-align:left;">${fmt(it.priceValue)}</td>
+    </tr>`).join('');
+  return `
+    <div style="text-align:center;margin-bottom:10px;">
+      <div style="font-size:17px;font-weight:800;">${escapeHtml(settings.pharmacyName)}</div>
+      <div style="font-size:12px;color:#666;">${escapeHtml(settings.address||'')}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--danger);margin-top:6px;">وەسڵی گەڕاندنەوە</div>
+    </div>
+    <div style="font-size:12px;display:flex;justify-content:space-between;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin-bottom:8px;">
+      <span>بەروار: ${rec.date}</span><span>کات: ${rec.time}</span>
+    </div>
+    <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
+      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">دەرمان</th><th>بڕ</th><th style="text-align:left;">نرخ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;text-align:center;font-weight:800;font-size:15px;">
+      ئەم پارەیە بدەرەوە بۆ نەخۆش: ${fmt(rec.totalRefund)}
+    </div>`;
+}
+function showReturnConfirmation(rec){
+  const html = buildReturnReceiptHtml(rec);
+  document.getElementById('returnPreview').innerHTML = html;
+  document.getElementById('printArea').innerHTML = html;
+  document.getElementById('returnModal').classList.add('show');
+}
+function closeReturnModal(){ document.getElementById('returnModal').classList.remove('show'); }
+function printReturnReceipt(){ window.print(); }
+
+function renderReturnsList(){
+  const tbody = document.getElementById('returnsTableBody');
+  if(!tbody) return;
+  const grandEl = document.getElementById('returnsGrandTotal');
+  if(returns.length===0){
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">هیچ گەڕاندنەوەیەک تۆمار نەکراوە</td></tr>';
+    if(grandEl) grandEl.textContent = 'کۆی گشتی پارەی گەڕاوە: 0';
+    return;
+  }
+  const grandTotal = returns.reduce((a,r)=>a+r.total,0);
+  if(grandEl) grandEl.textContent = 'کۆی گشتی پارەی گەڕاوە: '+fmt(grandTotal);
+  const sorted = [...returns].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
+  let out='';
+  sorted.forEach(r=>{
+    r.items.forEach(it=>{
+      out += `<tr>
+        <td>${escapeHtml(it.name)}</td>
+        <td>${it.qty} ${it.unitLabel}</td>
+        <td>${fmt(it.priceValue)}</td>
+        <td>${fmt(it.qty*it.priceValue)}</td>
+        <td>${r.date} ${r.time}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML = out;
+}
+
 /* ===================== DEBT VIEW ===================== */
 function renderDebtList(){
   const q = (document.getElementById('debtSearch').value||'').trim().toLowerCase();
@@ -1052,31 +1303,55 @@ function renderReport(){
   const cashTotal = daySales.filter(s=>s.type==='cash').reduce((a,s)=>a+s.total,0);
   const debtTotal = daySales.filter(s=>s.type==='debt').reduce((a,s)=>a+s.total,0);
   const grand = cashTotal+debtTotal;
+  const dayReturns = returns.filter(r=>r.date===date);
+  const returnTotal = dayReturns.reduce((a,r)=>a+r.total,0);
   document.getElementById('reportKpis').innerHTML = `
     <div class="kpi"><span>کۆی گشتی فرۆشراو</span><b>${fmt(grand)}</b></div>
     <div class="kpi"><span>نەقد</span><b>${fmt(cashTotal)}</b></div>
     <div class="kpi"><span>قەرز</span><b>${fmt(debtTotal)}</b></div>
+    <div class="kpi"><span>پارەی گەڕاندراوە</span><b style="color:var(--danger);">${fmt(returnTotal)}</b></div>
+    <div class="kpi"><span>دەرەنجامی ڕاستەقینە</span><b>${fmt(grand-returnTotal)}</b></div>
     <div class="kpi"><span>ژمارەی مامەڵە</span><b>${daySales.length}</b></div>
   `;
   const tbody = document.getElementById('reportTableBody');
   if(daySales.length===0){
     tbody.innerHTML = '<tr><td colspan="6" class="empty">هیچ فرۆشتنێک لەم ڕۆژە تۆمار نەکراوە</td></tr>';
+  } else {
+    let out='';
+    daySales.sort((a,b)=>b.time.localeCompare(a.time)).forEach(s=>{
+      s.items.forEach(it=>{
+        out += `<tr>
+          <td>${s.time}</td>
+          <td>${escapeHtml(it.name)}</td>
+          <td>${it.qty} ${it.unitLabel}</td>
+          <td>${fmt(it.qty*it.priceValue)}</td>
+          <td>${s.type==='cash'?'نەقد':'قەرز'}</td>
+          <td>${s.type==='debt'?escapeHtml(s.debtorName):'—'}</td>
+        </tr>`;
+      });
+    });
+    tbody.innerHTML = out;
+  }
+
+  const rtbody = document.getElementById('reportReturnsTableBody');
+  if(!rtbody) return;
+  if(dayReturns.length===0){
+    rtbody.innerHTML = '<tr><td colspan="5" class="empty">هیچ گەڕاندنەوەیەک لەم ڕۆژە تۆمار نەکراوە</td></tr>';
     return;
   }
-  let out='';
-  daySales.sort((a,b)=>b.time.localeCompare(a.time)).forEach(s=>{
-    s.items.forEach(it=>{
-      out += `<tr>
-        <td>${s.time}</td>
+  let rout='';
+  dayReturns.sort((a,b)=>b.time.localeCompare(a.time)).forEach(r=>{
+    r.items.forEach(it=>{
+      rout += `<tr>
+        <td>${r.time}</td>
         <td>${escapeHtml(it.name)}</td>
         <td>${it.qty} ${it.unitLabel}</td>
         <td>${fmt(it.qty*it.priceValue)}</td>
-        <td>${s.type==='cash'?'نەقد':'قەرز'}</td>
-        <td>${s.type==='debt'?escapeHtml(s.debtorName):'—'}</td>
+        <td>${r.patientName ? escapeHtml(r.patientName) : '—'}</td>
       </tr>`;
     });
   });
-  tbody.innerHTML = out;
+  rtbody.innerHTML = rout;
 }
 
 /* ===================== EXPIRY VIEW ===================== */
