@@ -270,6 +270,29 @@
     display:none;background:#fdecea;color:var(--danger);
     padding:10px 16px;border-radius:10px;font-size:13px;max-width:320px;text-align:center;
   }
+
+  /* ---------- LANGUAGE SWITCH ---------- */
+  .langSwitch{display:flex;gap:6px;justify-content:center;margin-bottom:16px;}
+  .langSwitch button{
+    padding:5px 16px;border-radius:20px;border:1.5px solid var(--line);
+    background:#f7fbff;color:var(--muted);font-size:12px;font-weight:700;
+  }
+  .langSwitch button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .sideLangSwitch{display:flex;gap:6px;margin:6px 0 14px;}
+  .sideLangSwitch button{
+    flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.06);color:#dceafd;font-size:11.5px;font-weight:700;
+  }
+  .sideLangSwitch button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  /* ---------- OFFLINE BANNER ---------- */
+  #offlineBanner{
+    display:none;
+    background:#fff4e2;color:var(--warn);
+    font-size:12.5px;font-weight:700;text-align:center;
+    padding:7px 10px;
+  }
+  #offlineBanner.show{display:block;}
 </style>
 </head>
 <body>
@@ -277,43 +300,52 @@
 <!-- ===================== LOADING ===================== -->
 <div id="loadingScreen">
   <div class="spinner"></div>
-  <div>پەیوەندی بە داتابەیسی هەمبەشەوە دەکرێت...</div>
-  <div id="connErr">نەتوانرا پەیوەندی بکرێت بە داتابەیس. تکایە ئینتەرنێت بپشکنە و لاپەڕەکە نوێ بکەرەوە.</div>
+  <div data-i18n="loading_text">پەیوەندی بە داتابەیسی هەمبەشەوە دەکرێت...</div>
+  <div id="connErr" data-i18n="conn_err_text">نەتوانرا پەیوەندی بکرێت بە داتابەیس. تکایە ئینتەرنێت بپشکنە و لاپەڕەکە نوێ بکەرەوە.</div>
 </div>
 
 <!-- ===================== LOGIN ===================== -->
 <div id="loginScreen" style="display:none;">
   <div class="loginCard">
+    <div class="langSwitch">
+      <button type="button" id="langBtnKu" onclick="setLang('ku')">کوردی</button>
+      <button type="button" id="langBtnEn" onclick="setLang('en')">English</button>
+    </div>
     <h1 id="loginPharmName">سیستەمی سەیدەلیە</h1>
-    <p class="sub">تکایە جۆری بەکارهێنەر و ووشەی نهێنی داخڵ بکە</p>
+    <p class="sub" data-i18n="login_subtitle">تکایە جۆری بەکارهێنەر و ووشەی نهێنی داخڵ بکە</p>
     <div class="roleTabs">
-      <button type="button" id="tabManager" class="active" onclick="setLoginRole('manager')">🧑‍💼 بەڕێوەبەر</button>
-      <button type="button" id="tabEmployee" onclick="setLoginRole('employee')">🧑‍⚕️ کارمەند</button>
+      <button type="button" id="tabManager" class="active" onclick="setLoginRole('manager')">🧑‍💼 <span data-i18n="role_manager">بەڕێوەبەر</span></button>
+      <button type="button" id="tabEmployee" onclick="setLoginRole('employee')">🧑‍⚕️ <span data-i18n="role_employee">کارمەند</span></button>
     </div>
     <div class="field">
-      <label>ووشەی نهێنی</label>
+      <label data-i18n="label_password">ووشەی نهێنی</label>
       <input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btnPrimary" onclick="doLogin()">چوونەژوورەوە</button>
+    <button class="btnPrimary" onclick="doLogin()" data-i18n="btn_login">چوونەژوورەوە</button>
     <div class="loginError" id="loginErr"></div>
   </div>
 </div>
 
 <!-- ===================== APP ===================== -->
 <div id="app">
+  <div id="offlineBanner" data-i18n="offline_banner_text">📡 ئۆفلاینیت — گۆڕانکارییەکان کاتێک ئینتەرنێت هەبێت خۆکار هاوکات دەکرێن</div>
   <div class="shell">
     <div class="sidebar">
       <div class="brand" id="sideBrand">سەیدەلیە</div>
       <div class="roleTag" id="sideRole">—</div>
-      <button class="navBtn" data-view="warehouse" onclick="switchView('warehouse')"><span class="ic">📦</span> کۆگا</button>
-      <button class="navBtn" data-view="sales" onclick="switchView('sales')"><span class="ic">🧾</span> فرۆشتن</button>
-      <button class="navBtn" data-view="returns" onclick="switchView('returns')"><span class="ic">↩️</span> گەڕاندنەوە</button>
-      <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> قەرز</button>
-      <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> راپۆرت</button>
-      <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> ئێکسپایەر</button>
-      <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> ڕێکخستن</button>
+      <div class="sideLangSwitch">
+        <button type="button" id="sideLangBtnKu" onclick="setLang('ku')">کوردی</button>
+        <button type="button" id="sideLangBtnEn" onclick="setLang('en')">English</button>
+      </div>
+      <button class="navBtn" data-view="warehouse" onclick="switchView('warehouse')"><span class="ic">📦</span> <span data-i18n="nav_warehouse">کۆگا</span></button>
+      <button class="navBtn" data-view="sales" onclick="switchView('sales')"><span class="ic">🧾</span> <span data-i18n="nav_sales">فرۆشتن</span></button>
+      <button class="navBtn" data-view="returns" onclick="switchView('returns')"><span class="ic">↩️</span> <span data-i18n="nav_returns">گەڕاندنەوە</span></button>
+      <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> <span data-i18n="nav_debt">قەرز</span></button>
+      <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> <span data-i18n="nav_reports">راپۆرت</span></button>
+      <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> <span data-i18n="nav_expiry">ئێکسپایەر</span></button>
+      <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> <span data-i18n="nav_settings">ڕێکخستن</span></button>
       <div class="spacer"></div>
-      <button class="logoutBtn" onclick="logout()">🚪 دەرچوون</button>
+      <button class="logoutBtn" onclick="logout()">🚪 <span data-i18n="btn_logout">دەرچوون</span></button>
     </div>
 
     <div class="main">
@@ -321,18 +353,25 @@
       <!-- ============ WAREHOUSE ============ -->
       <section id="view-warehouse" style="display:none;">
         <div class="topbar">
-          <h2>📦 کۆگا</h2>
-          <button class="btn blue" onclick="openMedModal()">+ زیادکردنی دەرمان</button>
+          <h2>📦 <span data-i18n="nav_warehouse">کۆگا</span></h2>
+          <button class="btn blue" onclick="openMedModal()" data-i18n="btn_add_medicine">+ زیادکردنی دەرمان</button>
         </div>
         <div class="card">
-          <input type="text" id="whSearch" placeholder="گەران بە ناو یان بارکۆدی دەرمان..." oninput="renderWarehouse()">
+          <div class="row between" style="margin-bottom:10px;">
+            <div class="cardTitle" style="margin:0;" data-i18n="warehouse_value_title">جەردی کۆگا (بەهای پارە)</div>
+            <button class="btn ghost small" onclick="renderWarehouseValue()" data-i18n="btn_refresh_value">🔄 نوێکردنەوە</button>
+          </div>
+          <div class="kpis" id="warehouseValueKpis"></div>
+        </div>
+        <div class="card">
+          <input type="text" id="whSearch" placeholder="گەران بە ناو یان بارکۆدی دەرمان..." data-i18n-placeholder="ph_wh_search" oninput="renderWarehouse()">
         </div>
         <div class="card">
           <div class="tblWrap">
             <table>
               <thead><tr>
-                <th>ناو</th><th>جۆر</th><th>بارکۆد</th><th>بەروار بەسەرچوون</th>
-                <th>بڕی مابوو</th><th>نرخی کۆگا</th><th>نرخی ستیکەر</th><th>نرخی داشکان</th><th>کردار</th>
+                <th data-i18n="th_name">ناو</th><th data-i18n="th_type">جۆر</th><th data-i18n="th_barcode">بارکۆد</th><th data-i18n="th_expiry">بەروار بەسەرچوون</th>
+                <th data-i18n="th_stock">بڕی مابوو</th><th data-i18n="th_wholesale">نرخی کۆگا</th><th data-i18n="th_sticker">نرخی ستیکەر</th><th data-i18n="th_discount">نرخی داشکان</th><th data-i18n="th_action">کردار</th>
               </tr></thead>
               <tbody id="whTableBody"></tbody>
             </table>
@@ -342,12 +381,12 @@
 
       <!-- ============ SALES ============ -->
       <section id="view-sales" style="display:none;">
-        <div class="topbar"><h2>🧾 فرۆشتن</h2></div>
+        <div class="topbar"><h2>🧾 <span data-i18n="nav_sales">فرۆشتن</span></h2></div>
         <div class="card">
-          <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
+          <label class="lbl" data-i18n="label_search_barcode_name">گەران بە بارکۆد یان ناوی دەرمان</label>
           <div class="row">
-            <input type="text" id="saleSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderSaleSearchResults()" onkeydown="if(event.key==='Enter')trySaleSearchDirect()">
-            <button class="btn blue small" type="button" onclick="openScanner('saleSearch', ()=>trySaleSearchDirect())">📷 سکان</button>
+            <input type="text" id="saleSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." data-i18n-placeholder="ph_scan_or_type" oninput="renderSaleSearchResults()" onkeydown="if(event.key==='Enter')trySaleSearchDirect()">
+            <button class="btn blue small" type="button" onclick="openScanner('saleSearch', ()=>trySaleSearchDirect())" data-i18n="btn_scan">📷 سکان</button>
           </div>
           <div id="saleSearchResults"></div>
         </div>
@@ -355,86 +394,90 @@
         <div class="card" id="salePickCard" style="display:none;">
           <div class="cardTitle" id="salePickName"></div>
           <div class="priceChoice" id="salePriceChoice"></div>
+          <div class="field" style="margin-top:2px;">
+            <label class="lbl" data-i18n="label_custom_price">نرخی تایبەت (ئارەزوومەندانە)</label>
+            <input type="number" id="saleCustomPrice" min="0" placeholder="نرخەکە بنووسە" data-i18n-placeholder="ph_custom_price" oninput="onCustomPriceInput()">
+          </div>
           <div class="grid2">
             <div class="field">
-              <label class="lbl" id="saleQtyLabel">بڕی فرۆشتن</label>
+              <label class="lbl" id="saleQtyLabel" data-i18n="label_sale_qty">بڕی فرۆشتن</label>
               <input type="number" id="saleQty" min="1" value="1">
             </div>
             <div class="field" style="display:flex;align-items:flex-end;">
-              <button class="btn blue" style="width:100%;" onclick="addToCart()">+ زیادکردن بۆ سەبەتە</button>
+              <button class="btn blue" style="width:100%;" onclick="addToCart()" data-i18n="btn_add_cart">+ زیادکردن بۆ سەبەتە</button>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div class="cardTitle">سەبەتەی فرۆشتن</div>
-          <div id="cartBox" class="cartBox"><div class="empty">هیچ شتێک زیاد نەکراوە</div></div>
+          <div class="cardTitle" data-i18n="cart_title">سەبەتەی فرۆشتن</div>
+          <div id="cartBox" class="cartBox"><div class="empty" data-i18n="empty_generic">هیچ شتێک زیاد نەکراوە</div></div>
           <div class="row between" style="margin-top:14px;">
             <b id="cartTotal">کۆی گشتی: 0</b>
           </div>
           <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
           <div class="grid2">
             <div class="field">
-              <label class="lbl">جۆری فرۆشتن</label>
+              <label class="lbl" data-i18n="label_sale_type">جۆری فرۆشتن</label>
               <select id="saleType" onchange="toggleDebtorField()">
-                <option value="cash">نەقد</option>
-                <option value="debt">قەرز</option>
+                <option value="cash" data-i18n="opt_cash">نەقد</option>
+                <option value="debt" data-i18n="opt_debt">قەرز</option>
               </select>
             </div>
             <div class="field" id="debtorField" style="display:none;">
-              <label class="lbl">ناوی نەخۆش</label>
-              <input type="text" id="debtorName" list="debtorList" placeholder="ناوی نەخۆش بنووسە">
+              <label class="lbl" data-i18n="label_patient_name">ناوی نەخۆش</label>
+              <input type="text" id="debtorName" list="debtorList" placeholder="ناوی نەخۆش بنووسە" data-i18n-placeholder="ph_patient_name">
               <datalist id="debtorList"></datalist>
             </div>
           </div>
-          <button class="btn blue" style="margin-top:8px;" onclick="finalizeSale()">✔️ تەواوکردنی فرۆشتن</button>
+          <button class="btn blue" style="margin-top:8px;" onclick="finalizeSale()" data-i18n="btn_finalize_sale">✔️ تەواوکردنی فرۆشتن</button>
         </div>
       </section>
 
       <!-- ============ RETURNS ============ -->
       <section id="view-returns" style="display:none;">
-        <div class="topbar"><h2>↩️ گەڕاندنەوەی دەرمان</h2></div>
+        <div class="topbar"><h2>↩️ <span data-i18n="h2_returns">گەڕاندنەوەی دەرمان</span></h2></div>
         <div class="card">
-          <label class="lbl">گەران بە بارکۆد یان ناوی دەرمان</label>
+          <label class="lbl" data-i18n="label_search_barcode_name">گەران بە بارکۆد یان ناوی دەرمان</label>
           <div class="row">
-            <input type="text" id="returnSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." oninput="renderReturnSearchResults()" onkeydown="if(event.key==='Enter')tryReturnSearchDirect()">
-            <button class="btn blue small" type="button" onclick="openScanner('returnSearch', ()=>tryReturnSearchDirect())">📷 سکان</button>
+            <input type="text" id="returnSearch" placeholder="بارکۆد بخوێنەرەوە یان ناو بنووسە..." data-i18n-placeholder="ph_scan_or_type" oninput="renderReturnSearchResults()" onkeydown="if(event.key==='Enter')tryReturnSearchDirect()">
+            <button class="btn blue small" type="button" onclick="openScanner('returnSearch', ()=>tryReturnSearchDirect())" data-i18n="btn_scan">📷 سکان</button>
           </div>
           <div id="returnSearchResults"></div>
         </div>
 
         <div class="card" id="returnPickCard" style="display:none;">
           <div class="cardTitle" id="returnPickName"></div>
-          <label class="lbl">نرخێک هەڵبژێرە کە پێی فرۆشراوە (بۆ گەڕاندنەوەی پارە)</label>
+          <label class="lbl" data-i18n="label_choose_refund_price">نرخێک هەڵبژێرە کە پێی فرۆشراوە (بۆ گەڕاندنەوەی پارە)</label>
           <div class="priceChoice" id="returnPriceChoice"></div>
           <div class="grid2">
             <div class="field">
-              <label class="lbl" id="returnQtyLabel">بڕی گەڕاندراوە</label>
+              <label class="lbl" id="returnQtyLabel" data-i18n="label_return_qty">بڕی گەڕاندراوە</label>
               <input type="number" id="returnQty" min="1" value="1">
             </div>
             <div class="field" style="display:flex;align-items:flex-end;">
-              <button class="btn blue" style="width:100%;" onclick="addToReturnCart()">+ زیادکردن بۆ سەبەتەی گەڕاندنەوە</button>
+              <button class="btn blue" style="width:100%;" onclick="addToReturnCart()" data-i18n="btn_add_return_cart">+ زیادکردن بۆ سەبەتەی گەڕاندنەوە</button>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div class="cardTitle">سەبەتەی گەڕاندنەوە</div>
-          <div id="returnCartBox" class="cartBox"><div class="empty">هیچ شتێک زیاد نەکراوە</div></div>
+          <div class="cardTitle" data-i18n="return_cart_title">سەبەتەی گەڕاندنەوە</div>
+          <div id="returnCartBox" class="cartBox"><div class="empty" data-i18n="empty_generic">هیچ شتێک زیاد نەکراوە</div></div>
           <div class="row between" style="margin-top:14px;">
             <b id="returnCartTotal">کۆی پارەی گەڕاندنەوە: 0</b>
           </div>
-          <button class="btn blue" style="margin-top:12px;" onclick="finalizeReturn()">✔️ تەواوکردنی گەڕاندنەوە</button>
+          <button class="btn blue" style="margin-top:12px;" onclick="finalizeReturn()" data-i18n="btn_finalize_return">✔️ تەواوکردنی گەڕاندنەوە</button>
         </div>
 
         <div class="card">
           <div class="row between">
-            <div class="cardTitle">مێژووی گەڕاندنەوەکان</div>
+            <div class="cardTitle" data-i18n="return_history_title">مێژووی گەڕاندنەوەکان</div>
             <b id="returnsGrandTotal" style="color:var(--primary-dark);"></b>
           </div>
           <div class="tblWrap">
             <table>
-              <thead><tr><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>کۆی گەڕاوە</th><th>بەروار / کات</th></tr></thead>
+              <thead><tr><th data-i18n="th_medicine">دەرمان</th><th data-i18n="th_qty">بڕ</th><th data-i18n="th_price">نرخ</th><th data-i18n="th_refunded_total">کۆی گەڕاوە</th><th data-i18n="th_date_time">بەروار / کات</th></tr></thead>
               <tbody id="returnsTableBody"></tbody>
             </table>
           </div>
@@ -443,15 +486,15 @@
 
       <!-- ============ DEBT ============ -->
       <section id="view-debt" style="display:none;">
-        <div class="topbar"><h2>💳 قەرز</h2></div>
+        <div class="topbar"><h2>💳 <span data-i18n="nav_debt">قەرز</span></h2></div>
         <div class="card">
-          <input type="text" id="debtSearch" placeholder="گەران بە ناوی نەخۆش..." oninput="renderDebtList()">
+          <input type="text" id="debtSearch" placeholder="گەران بە ناوی نەخۆش..." data-i18n-placeholder="ph_debt_search" oninput="renderDebtList()">
         </div>
         <div class="card">
           <div class="tblWrap">
             <table>
               <thead><tr>
-                <th>ناوی نەخۆش</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>بەروار / کات</th><th>دۆخ</th><th>کردار</th>
+                <th data-i18n="th_patient">ناوی نەخۆش</th><th data-i18n="th_medicine">دەرمان</th><th data-i18n="th_qty">بڕ</th><th data-i18n="th_price">نرخ</th><th data-i18n="th_date_time">بەروار / کات</th><th data-i18n="th_status">دۆخ</th><th data-i18n="th_action">کردار</th>
               </tr></thead>
               <tbody id="debtTableBody"></tbody>
             </table>
@@ -461,26 +504,26 @@
 
       <!-- ============ REPORTS ============ -->
       <section id="view-reports" style="display:none;">
-        <div class="topbar"><h2>📊 راپۆرت</h2></div>
+        <div class="topbar"><h2>📊 <span data-i18n="nav_reports">راپۆرت</span></h2></div>
         <div class="card">
-          <label class="lbl">ڕۆژ</label>
+          <label class="lbl" data-i18n="label_day">ڕۆژ</label>
           <input type="date" id="reportDate" onchange="renderReport()">
         </div>
         <div class="kpis" id="reportKpis"></div>
         <div class="card">
-          <div class="cardTitle">فرۆشتنەکانی ئەم ڕۆژە</div>
+          <div class="cardTitle" data-i18n="today_sales_title">فرۆشتنەکانی ئەم ڕۆژە</div>
           <div class="tblWrap">
             <table>
-              <thead><tr><th>کات</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>جۆر</th><th>نەخۆش</th></tr></thead>
+              <thead><tr><th data-i18n="th_time">کات</th><th data-i18n="th_medicine">دەرمان</th><th data-i18n="th_qty">بڕ</th><th data-i18n="th_price">نرخ</th><th data-i18n="th_type_col">جۆر</th><th data-i18n="th_patient">نەخۆش</th></tr></thead>
               <tbody id="reportTableBody"></tbody>
             </table>
           </div>
         </div>
         <div class="card">
-          <div class="cardTitle">گەڕاندنەوەکانی ئەم ڕۆژە</div>
+          <div class="cardTitle" data-i18n="today_returns_title">گەڕاندنەوەکانی ئەم ڕۆژە</div>
           <div class="tblWrap">
             <table>
-              <thead><tr><th>کات</th><th>دەرمان</th><th>بڕ</th><th>نرخ</th><th>نەخۆش</th></tr></thead>
+              <thead><tr><th data-i18n="th_time">کات</th><th data-i18n="th_medicine">دەرمان</th><th data-i18n="th_qty">بڕ</th><th data-i18n="th_price">نرخ</th><th data-i18n="th_patient">نەخۆش</th></tr></thead>
               <tbody id="reportReturnsTableBody"></tbody>
             </table>
           </div>
@@ -489,11 +532,11 @@
 
       <!-- ============ EXPIRY ============ -->
       <section id="view-expiry" style="display:none;">
-        <div class="topbar"><h2>⏰ ئێکسپایەر (٦٠ ڕۆژ یان کەمتر)</h2></div>
+        <div class="topbar"><h2>⏰ <span data-i18n="nav_expiry">ئێکسپایەر</span> <span data-i18n="expiry_header_suffix">(٦٠ ڕۆژ یان کەمتر)</span></h2></div>
         <div class="card">
           <div class="tblWrap">
             <table>
-              <thead><tr><th>ناوی دەرمان</th><th>بەروار بەسەرچوون</th><th>ڕۆژی ماوە</th><th>بڕی مابوو</th></tr></thead>
+              <thead><tr><th data-i18n="th_medicine_name">ناوی دەرمان</th><th data-i18n="th_expiry">بەروار بەسەرچوون</th><th data-i18n="th_days_left">ڕۆژی ماوە</th><th data-i18n="th_stock">بڕی مابوو</th></tr></thead>
               <tbody id="expiryTableBody"></tbody>
             </table>
           </div>
@@ -502,43 +545,43 @@
 
       <!-- ============ SETTINGS ============ -->
       <section id="view-settings" style="display:none;">
-        <div class="topbar"><h2>⚙️ ڕێکخستن</h2></div>
+        <div class="topbar"><h2>⚙️ <span data-i18n="nav_settings">ڕێکخستن</span></h2></div>
         <div class="card">
-          <div class="cardTitle">زانیاری سەیدەلیە (بۆ وەسڵ)</div>
+          <div class="cardTitle" data-i18n="settings_pharm_info_title">زانیاری سەیدەلیە (بۆ وەسڵ)</div>
           <div class="grid2">
-            <div class="field"><label class="lbl">ناوی سەیدەلیە</label><input type="text" id="setPharmName"></div>
-            <div class="field"><label class="lbl">ناونیشان</label><input type="text" id="setAddress"></div>
+            <div class="field"><label class="lbl" data-i18n="label_pharm_name">ناوی سەیدەلیە</label><input type="text" id="setPharmName"></div>
+            <div class="field"><label class="lbl" data-i18n="label_address">ناونیشان</label><input type="text" id="setAddress"></div>
           </div>
-          <button class="btn blue" onclick="saveGeneralSettings()">پاشەکەوتکردن</button>
+          <button class="btn blue" onclick="saveGeneralSettings()" data-i18n="btn_save">پاشەکەوتکردن</button>
         </div>
 
         <div class="card">
-          <div class="cardTitle">ڕەنگی سیستەم</div>
+          <div class="cardTitle" data-i18n="settings_colors_title">ڕەنگی سیستەم</div>
           <div class="row" style="gap:16px;">
             <div>
-              <label class="lbl">ڕەنگی سەرەکی</label>
+              <label class="lbl" data-i18n="label_primary_color">ڕەنگی سەرەکی</label>
               <input type="color" id="setColorPrimary" class="colorSwatch">
             </div>
             <div>
-              <label class="lbl">ڕەنگی لاوەکی</label>
+              <label class="lbl" data-i18n="label_accent_color">ڕەنگی لاوەکی</label>
               <input type="color" id="setColorAccent" class="colorSwatch">
             </div>
-            <button class="btn ghost" onclick="applyColors(true)">جێبەجێکردن و پاشەکەوت</button>
+            <button class="btn ghost" onclick="applyColors(true)" data-i18n="btn_apply_save_colors">جێبەجێکردن و پاشەکەوت</button>
           </div>
         </div>
 
         <div class="card">
-          <div class="cardTitle">گۆڕینی ووشەی نهێنی</div>
+          <div class="cardTitle" data-i18n="settings_pass_title">گۆڕینی ووشەی نهێنی</div>
           <div class="grid2">
-            <div class="field"><label class="lbl">ووشەی نهێنی نوێی بەڕێوەبەر</label><input type="password" id="setManagerPass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی"></div>
-            <div class="field"><label class="lbl">ووشەی نهێنی نوێی کارمەند</label><input type="password" id="setEmployeePass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی"></div>
+            <div class="field"><label class="lbl" data-i18n="label_new_manager_pass">ووشەی نهێنی نوێی بەڕێوەبەر</label><input type="password" id="setManagerPass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی" data-i18n-placeholder="ph_leave_blank"></div>
+            <div class="field"><label class="lbl" data-i18n="label_new_employee_pass">ووشەی نهێنی نوێی کارمەند</label><input type="password" id="setEmployeePass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی" data-i18n-placeholder="ph_leave_blank"></div>
           </div>
-          <button class="btn blue" onclick="savePasswords()">گۆڕینی ووشە نهێنیەکان</button>
+          <button class="btn blue" onclick="savePasswords()" data-i18n="btn_change_passwords">گۆڕینی ووشە نهێنیەکان</button>
         </div>
 
         <div class="card">
-          <div class="cardTitle">داتا</div>
-          <button class="btn danger" onclick="resetAllData()">سڕینەوەی هەموو داتا (ڕیسێت)</button>
+          <div class="cardTitle" data-i18n="settings_data_title">داتا</div>
+          <button class="btn danger" onclick="resetAllData()" data-i18n="btn_reset_data">سڕینەوەی هەموو داتا (ڕیسێت)</button>
         </div>
       </section>
 
@@ -549,18 +592,18 @@
 <!-- ===================== MEDICINE MODAL ===================== -->
 <div class="modalBg" id="medModal">
   <div class="modalCard">
-    <h3 id="medModalTitle">زیادکردنی دەرمانی نوێ</h3>
+    <h3 id="medModalTitle" data-i18n="modal_add_title">زیادکردنی دەرمانی نوێ</h3>
     <input type="hidden" id="medId">
     <div class="grid2">
-      <div class="field"><label class="lbl">ناوی دەرمان *</label><input type="text" id="medName"></div>
+      <div class="field"><label class="lbl" data-i18n="label_med_name">ناوی دەرمان *</label><input type="text" id="medName"></div>
       <div class="field">
-        <label class="lbl">بارکۆد</label>
-        <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()">دروستکردن</button><button class="btn blue small" type="button" onclick="openScanner('medBarcode')">📷 سکان</button></div>
+        <label class="lbl" data-i18n="th_barcode">بارکۆد</label>
+        <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()" data-i18n="btn_generate">دروستکردن</button><button class="btn blue small" type="button" onclick="openScanner('medBarcode')" data-i18n="btn_scan">📷 سکان</button></div>
       </div>
     </div>
     <div class="grid2">
       <div class="field">
-        <label class="lbl">جۆری دەرمان</label>
+        <label class="lbl" data-i18n="label_med_type">جۆری دەرمان</label>
         <select id="medType">
           <option>شەربەت (Syrup)</option><option>ساشێ (Sachet)</option><option>بائوتڵ (Bottle)</option>
           <option>ڤایەل (Vial)</option><option>ئامپول (Amp)</option><option>پۆدەر (Powder)</option>
@@ -571,23 +614,23 @@
           <option>ئینفیوژن (Infusion)</option>
         </select>
       </div>
-      <div class="field"><label class="lbl">بەروار بەسەرچوون</label><input type="date" id="medExpiry"></div>
+      <div class="field"><label class="lbl" data-i18n="th_expiry">بەروار بەسەرچوون</label><input type="date" id="medExpiry"></div>
     </div>
     <div class="grid3">
-      <div class="field"><label class="lbl">دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)</label><input type="number" id="medPackSize" min="1" value="1"></div>
-      <div class="field"><label class="lbl">کۆی گشتی لە کۆگا (دانە/شریت)</label><input type="number" id="medTotalUnits" min="0" value="0"></div>
-      <div class="field"><label class="lbl">ناوی یەکە (دانە/شریت/پاکەت)</label><input type="text" id="medUnitLabel" value="دانە"></div>
+      <div class="field"><label class="lbl" data-i18n="label_pack_size">دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)</label><input type="number" id="medPackSize" min="1" value="1"></div>
+      <div class="field"><label class="lbl" data-i18n="label_total_units">کۆی گشتی لە کۆگا (دانە/شریت)</label><input type="number" id="medTotalUnits" min="0" value="0"></div>
+      <div class="field"><label class="lbl" data-i18n="label_unit_name">ناوی یەکە (دانە/شریت/پاکەت)</label><input type="text" id="medUnitLabel" value="دانە"></div>
     </div>
     <div class="grid3">
-      <div class="field"><label class="lbl">نرخی کۆگا</label><input type="number" id="medWholesale" min="0" value="0"></div>
-      <div class="field"><label class="lbl">نرخی ستیکەر</label><input type="number" id="medSticker" min="0" value="0"></div>
-      <div class="field"><label class="lbl">نرخی داشکان</label><input type="number" id="medDiscount" min="0" value="0"></div>
+      <div class="field"><label class="lbl" data-i18n="th_wholesale">نرخی کۆگا</label><input type="number" id="medWholesale" min="0" value="0"></div>
+      <div class="field"><label class="lbl" data-i18n="th_sticker">نرخی ستیکەر</label><input type="number" id="medSticker" min="0" value="0"></div>
+      <div class="field"><label class="lbl" data-i18n="th_discount">نرخی داشکان</label><input type="number" id="medDiscount" min="0" value="0"></div>
     </div>
     <div class="row between" style="margin-top:16px;">
-      <button class="btn danger" id="medDeleteBtn" style="display:none;" onclick="deleteMed()">سڕینەوە</button>
+      <button class="btn danger" id="medDeleteBtn" style="display:none;" onclick="deleteMed()" data-i18n="btn_delete">سڕینەوە</button>
       <div class="row" style="gap:8px;">
-        <button class="btn ghost" onclick="closeMedModal()">پاشگەزبوونەوە</button>
-        <button class="btn blue" onclick="saveMed()">پاشەکەوتکردن</button>
+        <button class="btn ghost" onclick="closeMedModal()" data-i18n="btn_cancel">پاشگەزبوونەوە</button>
+        <button class="btn blue" onclick="saveMed()" data-i18n="btn_save">پاشەکەوتکردن</button>
       </div>
     </div>
   </div>
@@ -596,11 +639,11 @@
 <!-- ===================== RECEIPT MODAL ===================== -->
 <div class="modalBg" id="receiptModal">
   <div class="modalCard" style="max-width:380px;">
-    <h3>وەسڵ ئامادەیە</h3>
+    <h3 data-i18n="receipt_title">وەسڵ ئامادەیە</h3>
     <div id="receiptPreview" style="border:1px dashed var(--line);border-radius:10px;padding:14px;font-size:13.5px;"></div>
     <div class="row" style="gap:8px;margin-top:16px;">
-      <button class="btn ghost" style="flex:1;" onclick="closeReceiptModal()">داخستن</button>
-      <button class="btn blue" style="flex:1;" onclick="printReceipt()">🖨️ چاپکردن</button>
+      <button class="btn ghost" style="flex:1;" onclick="closeReceiptModal()" data-i18n="btn_close">داخستن</button>
+      <button class="btn blue" style="flex:1;" onclick="printReceipt()" data-i18n="btn_print">🖨️ چاپکردن</button>
     </div>
   </div>
 </div>
@@ -608,11 +651,11 @@
 <!-- ===================== RETURN CONFIRMATION MODAL ===================== -->
 <div class="modalBg" id="returnModal">
   <div class="modalCard" style="max-width:380px;">
-    <h3>گەڕاندنەوە تەواو بوو</h3>
+    <h3 data-i18n="return_done_title">گەڕاندنەوە تەواو بوو</h3>
     <div id="returnPreview" style="border:1px dashed var(--line);border-radius:10px;padding:14px;font-size:13.5px;"></div>
     <div class="row" style="gap:8px;margin-top:16px;">
-      <button class="btn ghost" style="flex:1;" onclick="closeReturnModal()">داخستن</button>
-      <button class="btn blue" style="flex:1;" onclick="printReturnReceipt()">🖨️ چاپکردن</button>
+      <button class="btn ghost" style="flex:1;" onclick="closeReturnModal()" data-i18n="btn_close">داخستن</button>
+      <button class="btn blue" style="flex:1;" onclick="printReturnReceipt()" data-i18n="btn_print">🖨️ چاپکردن</button>
     </div>
   </div>
 </div>
@@ -620,10 +663,10 @@
 <!-- ===================== BARCODE SCANNER MODAL ===================== -->
 <div class="modalBg" id="scannerModal">
   <div class="modalCard" style="max-width:420px;">
-    <h3>سکانکردنی بارکۆد</h3>
+    <h3 data-i18n="scanner_title">سکانکردنی بارکۆد</h3>
     <div id="scannerRegion" style="width:100%;border-radius:10px;overflow:hidden;background:#000;min-height:220px;"></div>
-    <div id="scannerHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center;">کامێراکە بەرەو بارکۆدەکە ڕابگرە</div>
-    <button class="btn ghost" style="width:100%;margin-top:12px;" onclick="closeScanner()">داخستن</button>
+    <div id="scannerHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center;" data-i18n="scanner_hint_default">کامێراکە بەرەو بارکۆدەکە ڕابگرە</div>
+    <button class="btn ghost" style="width:100%;margin-top:12px;" onclick="closeScanner()" data-i18n="btn_close">داخستن</button>
   </div>
 </div>
 
@@ -645,6 +688,10 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const persistenceReady = db.enablePersistence({ synchronizeTabs: true }).then(()=>true).catch(err=>{
+  console.warn('Firestore offline persistence unavailable:', err.code);
+  return false;
+});
 
 /* ===================== SETTINGS / DATA (CLOUD) ===================== */
 function defaultSettings(){
@@ -659,12 +706,17 @@ function defaultSettings(){
 }
 async function initSettings(){
   const ref = db.collection('config').doc('settings');
-  const snap = await ref.get();
-  if(snap.exists){
-    settings = Object.assign(defaultSettings(), snap.data());
-  } else {
+  try{
+    const snap = await ref.get();
+    if(snap.exists){
+      settings = Object.assign(defaultSettings(), snap.data());
+    } else {
+      settings = defaultSettings();
+      ref.set(settings).catch(()=>{}); // will sync once online if this fails now
+    }
+  }catch(e){
+    // fully offline with no local cache yet (first-ever load) — fall back to defaults
     settings = defaultSettings();
-    await ref.set(settings);
   }
 }
 async function persistSettings(){
@@ -698,6 +750,188 @@ let medicines = [];
 let sales = [];
 let returns = [];
 let currentRole = null; // 'manager' | 'employee'
+let currentLang = localStorage.getItem('phx_lang') || 'ku';
+
+/* ===================== TRANSLATIONS ===================== */
+const translations = {
+  ku: {
+    login_subtitle:'تکایە جۆری بەکارهێنەر و ووشەی نهێنی داخڵ بکە',
+    role_manager:'بەڕێوەبەر', role_employee:'کارمەند',
+    label_password:'ووشەی نهێنی', btn_login:'چوونەژوورەوە',
+    nav_warehouse:'کۆگا', nav_sales:'فرۆشتن', nav_returns:'گەڕاندنەوە', nav_debt:'قەرز',
+    nav_reports:'راپۆرت', nav_expiry:'ئێکسپایەر', nav_settings:'ڕێکخستن', btn_logout:'دەرچوون',
+    btn_add_medicine:'+ زیادکردنی دەرمان', ph_wh_search:'گەران بە ناو یان بارکۆدی دەرمان...',
+    th_name:'ناو', th_type:'جۆر', th_barcode:'بارکۆد', th_expiry:'بەروار بەسەرچوون',
+    th_stock:'بڕی مابوو', th_wholesale:'نرخی کۆگا', th_sticker:'نرخی ستیکەر', th_discount:'نرخی داشکان',
+    th_action:'کردار', btn_edit:'دەستکاری',
+    label_search_barcode_name:'گەران بە بارکۆد یان ناوی دەرمان', ph_scan_or_type:'بارکۆد بخوێنەرەوە یان ناو بنووسە...',
+    btn_scan:'📷 سکان', label_sale_qty:'بڕی فرۆشتن', btn_add_cart:'+ زیادکردن بۆ سەبەتە',
+    cart_title:'سەبەتەی فرۆشتن', empty_generic:'هیچ شتێک زیاد نەکراوە',
+    label_sale_type:'جۆری فرۆشتن', opt_cash:'نەقد', opt_debt:'قەرز',
+    label_patient_name:'ناوی نەخۆش', ph_patient_name:'ناوی نەخۆش بنووسە',
+    btn_finalize_sale:'✔️ تەواوکردنی فرۆشتن',
+    h2_returns:'گەڕاندنەوەی دەرمان', label_choose_refund_price:'نرخێک هەڵبژێرە کە پێی فرۆشراوە (بۆ گەڕاندنەوەی پارە)',
+    label_return_qty:'بڕی گەڕاندراوە', btn_add_return_cart:'+ زیادکردن بۆ سەبەتەی گەڕاندنەوە',
+    return_cart_title:'سەبەتەی گەڕاندنەوە', btn_finalize_return:'✔️ تەواوکردنی گەڕاندنەوە',
+    return_history_title:'مێژووی گەڕاندنەوەکان', th_medicine:'دەرمان', th_qty:'بڕ', th_price:'نرخ',
+    th_refunded_total:'کۆی گەڕاوە', th_date_time:'بەروار / کات',
+    ph_debt_search:'گەران بە ناوی نەخۆش...', th_patient:'ناوی نەخۆش', th_status:'دۆخ',
+    btn_mark_paid:'وەسڵکردن', debt_paid:'دراوەتەوە', debt_unpaid:'وەسڵ نەکراوە',
+    label_day:'ڕۆژ', today_sales_title:'فرۆشتنەکانی ئەم ڕۆژە', th_time:'کات', th_type_col:'جۆر',
+    today_returns_title:'گەڕاندنەوەکانی ئەم ڕۆژە',
+    kpi_grand_total:'کۆی گشتی فرۆشراو', kpi_cash:'نەقد', kpi_debt:'قەرز',
+    kpi_returned:'پارەی گەڕاندراوە', kpi_net:'دەرەنجامی ڕاستەقینە', kpi_txn_count:'ژمارەی مامەڵە',
+    expiry_header_suffix:'(٦٠ ڕۆژ یان کەمتر)', th_medicine_name:'ناوی دەرمان', th_days_left:'ڕۆژی ماوە',
+    settings_pharm_info_title:'زانیاری سەیدەلیە (بۆ وەسڵ)', label_pharm_name:'ناوی سەیدەلیە',
+    label_address:'ناونیشان', btn_save:'پاشەکەوتکردن', settings_colors_title:'ڕەنگی سیستەم',
+    label_primary_color:'ڕەنگی سەرەکی', label_accent_color:'ڕەنگی لاوەکی',
+    btn_apply_save_colors:'جێبەجێکردن و پاشەکەوت', settings_pass_title:'گۆڕینی ووشەی نهێنی',
+    label_new_manager_pass:'ووشەی نهێنی نوێی بەڕێوەبەر', ph_leave_blank:'بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی',
+    label_new_employee_pass:'ووشەی نهێنی نوێی کارمەند', btn_change_passwords:'گۆڕینی ووشە نهێنیەکان',
+    settings_data_title:'داتا', btn_reset_data:'سڕینەوەی هەموو داتا (ڕیسێت)',
+    modal_add_title:'زیادکردنی دەرمانی نوێ', modal_edit_title:'دەستکاریکردنی دەرمان',
+    label_med_name:'ناوی دەرمان *', btn_generate:'دروستکردن', label_med_type:'جۆری دەرمان',
+    label_pack_size:'دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)',
+    label_total_units:'کۆی گشتی لە کۆگا (دانە/شریت)', label_unit_name:'ناوی یەکە (دانە/شریت/پاکەت)',
+    btn_delete:'سڕینەوە', btn_cancel:'پاشگەزبوونەوە',
+    receipt_title:'وەسڵ ئامادەیە', btn_close:'داخستن', btn_print:'🖨️ چاپکردن',
+    return_done_title:'گەڕاندنەوە تەواو بوو',
+    scanner_title:'سکانکردنی بارکۆد', scanner_hint_default:'کامێراکە بەرەو بارکۆدەکە ڕابگرە',
+    loading_text:'پەیوەندی بە داتابەیسی هەمبەشەوە دەکرێت...',
+    conn_err_text:'نەتوانرا پەیوەندی بکرێت بە داتابەیس. تکایە ئینتەرنێت بپشکنە و لاپەڕەکە نوێ بکەرەوە.',
+    unit_carton:'کارتۆن', receipt_date:'بەروار', receipt_time:'کات', receipt_type:'جۆر',
+    receipt_patient:'ناوی نەخۆش', receipt_total:'کۆی گشتی', receipt_return_qty:'بڕ', receipt_return_price:'نرخ',
+    empty_no_meds:'هیچ دەرمانێک نەدۆزرایەوە', empty_no_debt:'هیچ قەرزێک تۆمار نەکراوە',
+    empty_no_sales_day:'هیچ فرۆشتنێک لەم ڕۆژە تۆمار نەکراوە', empty_no_expiry:'هیچ دەرمانێک نزیک نییە لە بەسەرچوون',
+    empty_no_returns:'هیچ گەڕاندنەوەیەک تۆمار نەکراوە', empty_no_returns_day:'هیچ گەڕاندنەوەیەک لەم ڕۆژە تۆمار نەکراوە',
+    grand_total_returned:'کۆی گشتی پارەی گەڕاوە', login_wrong_pass:'ووشەی نهێنی هەڵەیە',
+    badge_expired:'بەسەرچووە', days_left_suffix:'ڕۆژ ماوە',
+    alert_invalid_qty:'بڕ دروست نییە', alert_qty_exceeds_stock:'بڕی داواکراو زیاترە لە بڕی مابوو لە کۆگا',
+    alert_cart_empty:'سەبەتە بەتاڵە', alert_enter_patient_name:'تکایە ناوی نەخۆش بنووسە',
+    alert_med_out_of_stock_prefix:'دەرمانی ', alert_med_out_of_stock_suffix:' نەماوە لە کۆگا',
+    alert_insufficient_stock_prefix:'بڕی کۆگای ', alert_insufficient_stock_suffix:' پێویست نییە',
+    alert_sale_error_prefix:'هەڵە لە تەواوکردنی فرۆشتن: ',
+    alert_return_cart_empty:'سەبەتەی گەڕاندنەوە بەتاڵە', alert_return_error_prefix:'هەڵە لە تەواوکردنی گەڕاندنەوە: ',
+    return_receipt_title:'وەسڵی گەڕاندنەوە', return_refund_prefix:'ئەم پارەیە بدەرەوە بۆ نەخۆش: ',
+    alert_generic_error_prefix:'هەڵە: ', alert_save_error_prefix:'هەڵە لە پاشەکەوتکردن: ',
+    confirm_delete_med:'دڵنیای لە سڕینەوەی ئەم دەرمانە؟',
+    confirm_reset_1:'ئایا دڵنیای؟ هەموو داتای کۆگا، فرۆشتن و قەرزەکان دەسڕدرێتەوە!',
+    confirm_reset_2:'دووبارە دڵنیابەرەوە: ئەم کردارە ناگەڕێتەوە.',
+    alert_data_reset_done:'هەموو داتا سڕدرایەوە', alert_settings_saved:'پاشەکەوت کرا',
+    alert_colors_saved:'ڕەنگەکان پاشەکەوت کران', alert_passwords_updated:'ووشە نهێنیەکان نوێ کرانەوە',
+    alert_enter_med_name:'تکایە ناوی دەرمان بنووسە',
+    scanner_hint_unavailable:'کامێرا بارنەبووە. تکایە ئینتەرنێت بپشکنە.',
+    scanner_hint_error:'ناتوانرێت کامێرا بکرێتەوە. ڕێگە بدە بە کامێرا لە وێبگەڕ، یان دەستی بارکۆدەکە بنووسە.',
+    offline_banner_text:'📡 ئۆفلاینیت — گۆڕانکارییەکان کاتێک ئینتەرنێت هەبێت خۆکار هاوکات دەکرێن',
+    warehouse_value_title:'جەردی کۆگا (بەهای پارە)', btn_refresh_value:'🔄 نوێکردنەوە',
+    kpi_wholesale_value:'کۆی بەها بە نرخی کۆگا', kpi_sticker_value:'کۆی بەها بە نرخی ستیکەر',
+    kpi_discount_value:'کۆی بەها بە نرخی داشکان', kpi_total_items:'ژمارەی جۆرەکانی دەرمان',
+    label_custom_price:'نرخی تایبەت (ئارەزوومەندانە)', ph_custom_price:'نرخەکە بنووسە',
+    custom_price_label:'نرخی تایبەت',
+  },
+  en: {
+    login_subtitle:'Please select the user type and enter the password',
+    role_manager:'Manager', role_employee:'Employee',
+    label_password:'Password', btn_login:'Login',
+    nav_warehouse:'Warehouse', nav_sales:'Sales', nav_returns:'Returns', nav_debt:'Debt',
+    nav_reports:'Reports', nav_expiry:'Expiry', nav_settings:'Settings', btn_logout:'Logout',
+    btn_add_medicine:'+ Add Medicine', ph_wh_search:'Search by medicine name or barcode...',
+    th_name:'Name', th_type:'Type', th_barcode:'Barcode', th_expiry:'Expiry Date',
+    th_stock:'Remaining Stock', th_wholesale:'Wholesale Price', th_sticker:'Sticker Price', th_discount:'Discount Price',
+    th_action:'Action', btn_edit:'Edit',
+    label_search_barcode_name:'Search by barcode or medicine name', ph_scan_or_type:'Scan barcode or type name...',
+    btn_scan:'📷 Scan', label_sale_qty:'Sale Quantity', btn_add_cart:'+ Add to Cart',
+    cart_title:'Sales Cart', empty_generic:'Nothing added yet',
+    label_sale_type:'Sale Type', opt_cash:'Cash', opt_debt:'Debt',
+    label_patient_name:'Patient Name', ph_patient_name:'Enter patient name',
+    btn_finalize_sale:'✔️ Complete Sale',
+    h2_returns:'Medicine Returns', label_choose_refund_price:'Select the price it was sold at (for refund)',
+    label_return_qty:'Return Quantity', btn_add_return_cart:'+ Add to Return Cart',
+    return_cart_title:'Return Cart', btn_finalize_return:'✔️ Complete Return',
+    return_history_title:'Return History', th_medicine:'Medicine', th_qty:'Qty', th_price:'Price',
+    th_refunded_total:'Refunded Total', th_date_time:'Date / Time',
+    ph_debt_search:'Search by patient name...', th_patient:'Patient Name', th_status:'Status',
+    btn_mark_paid:'Mark Paid', debt_paid:'Paid', debt_unpaid:'Unpaid',
+    label_day:'Day', today_sales_title:"Today's Sales", th_time:'Time', th_type_col:'Type',
+    today_returns_title:"Today's Returns",
+    kpi_grand_total:'Total Sales', kpi_cash:'Cash', kpi_debt:'Debt',
+    kpi_returned:'Refunded Amount', kpi_net:'Net Total', kpi_txn_count:'Transaction Count',
+    expiry_header_suffix:'(60 days or less)', th_medicine_name:'Medicine Name', th_days_left:'Days Left',
+    settings_pharm_info_title:'Pharmacy Info (for receipt)', label_pharm_name:'Pharmacy Name',
+    label_address:'Address', btn_save:'Save', settings_colors_title:'System Colors',
+    label_primary_color:'Primary Color', label_accent_color:'Accent Color',
+    btn_apply_save_colors:'Apply & Save', settings_pass_title:'Change Password',
+    label_new_manager_pass:'New Manager Password', ph_leave_blank:'Leave blank if unchanged',
+    label_new_employee_pass:'New Employee Password', btn_change_passwords:'Change Passwords',
+    settings_data_title:'Data', btn_reset_data:'Delete All Data (Reset)',
+    modal_add_title:'Add New Medicine', modal_edit_title:'Edit Medicine',
+    label_med_name:'Medicine Name *', btn_generate:'Generate', label_med_type:'Medicine Type',
+    label_pack_size:'Units per carton (1 if no carton)',
+    label_total_units:'Total Stock (units)', label_unit_name:'Unit Name (piece/strip/pack)',
+    btn_delete:'Delete', btn_cancel:'Cancel',
+    receipt_title:'Receipt Ready', btn_close:'Close', btn_print:'🖨️ Print',
+    return_done_title:'Return Completed',
+    scanner_title:'Scan Barcode', scanner_hint_default:'Point the camera at the barcode',
+    loading_text:'Connecting to shared database...',
+    conn_err_text:'Could not connect to the database. Please check your internet and refresh the page.',
+    unit_carton:'carton', receipt_date:'Date', receipt_time:'Time', receipt_type:'Type',
+    receipt_patient:'Patient', receipt_total:'Total', receipt_return_qty:'Qty', receipt_return_price:'Price',
+    empty_no_meds:'No medicines found', empty_no_debt:'No debts recorded',
+    empty_no_sales_day:'No sales recorded for this day', empty_no_expiry:'No medicines nearing expiry',
+    empty_no_returns:'No returns recorded', empty_no_returns_day:'No returns recorded for this day',
+    grand_total_returned:'Total Refunded Amount', login_wrong_pass:'Incorrect password',
+    badge_expired:'Expired', days_left_suffix:'days left',
+    alert_invalid_qty:'Invalid quantity', alert_qty_exceeds_stock:'Requested quantity exceeds available stock',
+    alert_cart_empty:'Cart is empty', alert_enter_patient_name:'Please enter the patient name',
+    alert_med_out_of_stock_prefix:'Medicine ', alert_med_out_of_stock_suffix:' is not in stock',
+    alert_insufficient_stock_prefix:'Insufficient stock for ', alert_insufficient_stock_suffix:'',
+    alert_sale_error_prefix:'Error completing sale: ',
+    alert_return_cart_empty:'Return cart is empty', alert_return_error_prefix:'Error completing return: ',
+    return_receipt_title:'Return Receipt', return_refund_prefix:'Refund this amount to patient: ',
+    alert_generic_error_prefix:'Error: ', alert_save_error_prefix:'Error saving: ',
+    confirm_delete_med:'Are you sure you want to delete this medicine?',
+    confirm_reset_1:'Are you sure? All warehouse, sales, and debt data will be deleted!',
+    confirm_reset_2:'Confirm again: this action cannot be undone.',
+    alert_data_reset_done:'All data has been deleted', alert_settings_saved:'Saved',
+    alert_colors_saved:'Colors saved', alert_passwords_updated:'Passwords updated',
+    alert_enter_med_name:'Please enter a medicine name',
+    scanner_hint_unavailable:'Camera failed to load. Please check your internet connection.',
+    scanner_hint_error:'Could not open the camera. Allow camera access in the browser, or type the barcode manually.',
+    offline_banner_text:'📡 You are offline — changes will sync automatically once the internet is back',
+    warehouse_value_title:'Inventory Stocktake (Value)', btn_refresh_value:'🔄 Refresh',
+    kpi_wholesale_value:'Total Value (Wholesale)', kpi_sticker_value:'Total Value (Sticker)',
+    kpi_discount_value:'Total Value (Discount)', kpi_total_items:'Number of Medicine Types',
+    label_custom_price:'Custom Price (optional)', ph_custom_price:'Enter the price',
+    custom_price_label:'Custom Price',
+  }
+};
+function t(key){
+  return (translations[currentLang] && translations[currentLang][key])
+      || translations.ku[key] || key;
+}
+function applyLanguage(){
+  document.documentElement.lang = currentLang==='en' ? 'en' : 'ckb';
+  document.documentElement.dir = currentLang==='en' ? 'ltr' : 'rtl';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{ el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
+  ['langBtnKu','sideLangBtnKu'].forEach(id=>{ const b=document.getElementById(id); if(b) b.classList.toggle('active', currentLang==='ku'); });
+  ['langBtnEn','sideLangBtnEn'].forEach(id=>{ const b=document.getElementById(id); if(b) b.classList.toggle('active', currentLang==='en'); });
+  if(currentRole){
+    document.getElementById('sideRole').textContent = currentRole==='manager'
+      ? '🧑\u200d💼 '+t('role_manager') : '🧑\u200d⚕️ '+t('role_employee');
+  }
+  if(document.getElementById('app').style.display!=='none'){
+    safeRenderAll();
+    renderSaleSearchResults(); renderCart();
+    renderReturnSearchResults(); renderReturnCart(); renderReturnsList();
+  }
+}
+function setLang(lang){
+  currentLang = lang;
+  localStorage.setItem('phx_lang', lang);
+  applyLanguage();
+}
+
 let loginRoleChoice = 'manager';
 let cart = []; // {medId, name, unitLabel, qty, priceType, priceValue, barcode}
 let currentPick = null; // medicine currently selected in sales panel
@@ -721,14 +955,14 @@ function doLogin(){
     currentRole = loginRoleChoice;
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('sideRole').textContent = currentRole==='manager' ? '🧑‍💼 بەڕێوەبەر' : '🧑‍⚕️ کارمەند';
+    document.getElementById('sideRole').textContent = currentRole==='manager' ? '🧑\u200d💼 '+t('role_manager') : '🧑\u200d⚕️ '+t('role_employee');
     applyPermissions();
     const firstView = currentRole==='manager' ? 'warehouse' : 'warehouse';
     switchView(firstView);
     document.getElementById('loginErr').textContent='';
     document.getElementById('loginPass').value='';
   } else {
-    document.getElementById('loginErr').textContent='ووشەی نهێنی هەڵەیە';
+    document.getElementById('loginErr').textContent = t('login_wrong_pass');
   }
 }
 function logout(){
@@ -790,7 +1024,7 @@ function stockDisplay(med){
     const cartons = Math.floor(med.totalUnits/packSize);
     const rem = med.totalUnits % packSize;
     let out='';
-    if(cartons>0) out += cartons+' کارتۆن';
+    if(cartons>0) out += cartons+' '+t('unit_carton');
     if(rem>0) out += (cartons>0?' + ':'')+rem+' '+med.unitLabel;
     if(cartons===0 && rem===0) out = '0 '+med.unitLabel;
     return out;
@@ -805,6 +1039,7 @@ function findMedByBarcodeOrName(query){
 
 /* ===================== WAREHOUSE VIEW ===================== */
 function renderWarehouse(){
+  renderWarehouseValue();
   const q = document.getElementById('whSearch').value.trim().toLowerCase();
   const tbody = document.getElementById('whTableBody');
   let list = medicines;
@@ -812,15 +1047,15 @@ function renderWarehouse(){
     list = medicines.filter(m => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q));
   }
   if(list.length===0){
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">هیچ دەرمانێک نەدۆزرایەوە</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">'+t('empty_no_meds')+'</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(m=>{
     const days = daysUntilExpiry(m.expiry);
     let expBadge = '';
     if(days!==null){
-      if(days<0) expBadge = '<span class="badge red">بەسەرچووە</span>';
-      else if(days<=60) expBadge = '<span class="badge orange">'+days+' ڕۆژ ماوە</span>';
+      if(days<0) expBadge = '<span class="badge red">'+t('badge_expired')+'</span>';
+      else if(days<=60) expBadge = '<span class="badge orange">'+days+' '+t('days_left_suffix')+'</span>';
     }
     return `<tr>
       <td>${escapeHtml(m.name)}</td>
@@ -831,9 +1066,25 @@ function renderWarehouse(){
       <td>${fmt(m.wholesale)}</td>
       <td>${fmt(m.sticker)}</td>
       <td>${fmt(m.discount)}</td>
-      <td><button class="btn ghost small" onclick="openMedModal('${m.id}')">دەستکاری</button></td>
+      <td><button class="btn ghost small" onclick="openMedModal('${m.id}')">${t('btn_edit')}</button></td>
     </tr>`;
   }).join('');
+}
+function renderWarehouseValue(){
+  const box = document.getElementById('warehouseValueKpis');
+  if(!box) return;
+  let wholesaleTotal=0, stickerTotal=0, discountTotal=0;
+  medicines.forEach(m=>{
+    wholesaleTotal += (m.totalUnits||0) * (m.wholesale||0);
+    stickerTotal += (m.totalUnits||0) * (m.sticker||0);
+    discountTotal += (m.totalUnits||0) * (m.discount||0);
+  });
+  box.innerHTML = `
+    <div class="kpi"><span>${t('kpi_wholesale_value')}</span><b>${fmt(wholesaleTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_sticker_value')}</span><b>${fmt(stickerTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_discount_value')}</span><b>${fmt(discountTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_total_items')}</span><b>${medicines.length}</b></div>
+  `;
 }
 function daysUntilExpiry(dateStr){
   if(!dateStr) return null;
@@ -849,7 +1100,7 @@ function openMedModal(id){
   document.getElementById('medModal').classList.add('show');
   if(id){
     const m = medicines.find(x=>x.id===id);
-    document.getElementById('medModalTitle').textContent='دەستکاریکردنی دەرمان';
+    document.getElementById('medModalTitle').textContent=t('modal_edit_title');
     document.getElementById('medId').value=m.id;
     document.getElementById('medName').value=m.name;
     document.getElementById('medBarcode').value=m.barcode;
@@ -863,7 +1114,7 @@ function openMedModal(id){
     document.getElementById('medDiscount').value=m.discount;
     document.getElementById('medDeleteBtn').style.display='inline-block';
   } else {
-    document.getElementById('medModalTitle').textContent='زیادکردنی دەرمانی نوێ';
+    document.getElementById('medModalTitle').textContent=t('modal_add_title');
     document.getElementById('medId').value='';
     document.getElementById('medName').value='';
     document.getElementById('medBarcode').value='';
@@ -894,9 +1145,9 @@ function openScanner(targetInputId, onScanned){
   scannerTargetInputId = targetInputId;
   scannerOnScanned = onScanned || null;
   document.getElementById('scannerModal').classList.add('show');
-  document.getElementById('scannerHint').textContent = 'کامێراکە بەرەو بارکۆدەکە ڕابگرە';
+  document.getElementById('scannerHint').textContent = t('scanner_hint_default');
   if(typeof Html5Qrcode === 'undefined'){
-    document.getElementById('scannerHint').textContent = 'کامێرا بارنەبووە. تکایە ئینتەرنێت بپشکنە.';
+    document.getElementById('scannerHint').textContent = t('scanner_hint_unavailable');
     return;
   }
   scannerInstance = new Html5Qrcode("scannerRegion");
@@ -913,7 +1164,7 @@ function openScanner(targetInputId, onScanned){
     },
     ()=>{ /* per-frame scan miss, ignore */ }
   ).catch(err=>{
-    document.getElementById('scannerHint').textContent = 'ناتوانرێت کامێرا بکرێتەوە. ڕێگە بدە بە کامێرا لە وێبگەڕ، یان دەستی بارکۆدەکە بنووسە.';
+    document.getElementById('scannerHint').textContent = t('scanner_hint_error');
   });
 }
 function closeScanner(){
@@ -927,7 +1178,7 @@ function closeScanner(){
 }
 async function saveMed(){
   const name = document.getElementById('medName').value.trim();
-  if(!name){ alert('تکایە ناوی دەرمان بنووسە'); return; }
+  if(!name){ alert(t('alert_enter_med_name')); return; }
   const id = document.getElementById('medId').value;
   let barcode = document.getElementById('medBarcode').value.trim();
   if(!barcode){
@@ -950,7 +1201,7 @@ async function saveMed(){
   try{
     await db.collection('medicines').doc(data.id).set(data);
   }catch(e){
-    alert('هەڵە لە پاشەکەوتکردن: '+e.message);
+    alert(t('alert_save_error_prefix')+e.message);
     return;
   }
   closeMedModal();
@@ -958,11 +1209,11 @@ async function saveMed(){
 async function deleteMed(){
   const id = document.getElementById('medId').value;
   if(!id) return;
-  if(!confirm('دڵنیای لە سڕینەوەی ئەم دەرمانە؟')) return;
+  if(!confirm(t('confirm_delete_med'))) return;
   try{
     await db.collection('medicines').doc(id).delete();
   }catch(e){
-    alert('هەڵە: '+e.message);
+    alert(t('alert_generic_error_prefix')+e.message);
     return;
   }
   closeMedModal();
@@ -975,7 +1226,7 @@ function renderSaleSearchResults(){
   if(!q){ box.innerHTML=''; return; }
   const results = findMedByBarcodeOrName(q).slice(0,8);
   if(results.length===0){
-    box.innerHTML = '<div class="empty">هیچ دەرمانێک نەدۆزرایەوە</div>';
+    box.innerHTML = '<div class="empty">'+t('empty_no_meds')+'</div>';
     return;
   }
   box.innerHTML = '<div class="tblWrap" style="max-height:220px;margin-top:10px;"><table><tbody>' +
@@ -994,39 +1245,57 @@ function pickMedForSale(id){
   currentPick = m;
   selectedPriceType = 'sticker';
   document.getElementById('salePickCard').style.display='block';
-  document.getElementById('salePickName').textContent = m.name + ' — ماوەی کۆگا: ' + stockDisplay(m);
-  document.getElementById('saleQtyLabel').textContent = 'بڕی فرۆشتن ('+m.unitLabel+')';
+  document.getElementById('salePickName').textContent = m.name + ' — ' + t('th_stock') + ': ' + stockDisplay(m);
+  document.getElementById('saleQtyLabel').textContent = t('label_sale_qty')+' ('+m.unitLabel+')';
   document.getElementById('saleQty').value = 1;
   document.getElementById('saleQty').max = m.totalUnits;
+  document.getElementById('saleCustomPrice').value = '';
   renderPriceChoice();
 }
 function renderPriceChoice(){
   const box = document.getElementById('salePriceChoice');
   const m = currentPick;
   const opts = [
-    {key:'wholesale', label:'نرخی کۆگا', val:m.wholesale},
-    {key:'sticker', label:'نرخی ستیکەر', val:m.sticker},
-    {key:'discount', label:'نرخی داشکان', val:m.discount},
+    {key:'wholesale', label:t('th_wholesale'), val:m.wholesale},
+    {key:'sticker', label:t('th_sticker'), val:m.sticker},
+    {key:'discount', label:t('th_discount'), val:m.discount},
   ];
   box.innerHTML = opts.map(o=>`<div class="priceBtn ${selectedPriceType===o.key?'sel':''}" onclick="selectPrice('${o.key}')">
     <small>${o.label}</small><b>${fmt(o.val)}</b>
   </div>`).join('');
+  const customInput = document.getElementById('saleCustomPrice');
+  if(customInput) customInput.parentElement.style.outline = selectedPriceType==='custom' ? '2px solid var(--accent)' : 'none';
 }
-function selectPrice(key){ selectedPriceType = key; renderPriceChoice(); }
+function selectPrice(key){ selectedPriceType = key; document.getElementById('saleCustomPrice').value=''; renderPriceChoice(); }
+function onCustomPriceInput(){
+  const val = document.getElementById('saleCustomPrice').value;
+  selectedPriceType = (val && parseFloat(val)>0) ? 'custom' : 'sticker';
+  renderPriceChoice();
+}
 function addToCart(){
   if(!currentPick) return;
   const qty = parseInt(document.getElementById('saleQty').value)||0;
-  if(qty<=0){ alert('بڕ دروست نییە'); return; }
+  if(qty<=0){ alert(t('alert_invalid_qty')); return; }
   const alreadyInCart = cart.filter(c=>c.medId===currentPick.id).reduce((a,c)=>a+c.qty,0);
-  if(qty + alreadyInCart > currentPick.totalUnits){ alert('بڕی داواکراو زیاترە لە بڕی مابوو لە کۆگا'); return; }
-  const priceVal = currentPick[selectedPriceType];
+  if(qty + alreadyInCart > currentPick.totalUnits){ alert(t('alert_qty_exceeds_stock')); return; }
+  const customVal = parseFloat(document.getElementById('saleCustomPrice').value);
+  let priceVal, priceLabelText, priceTypeVal;
+  if(selectedPriceType==='custom' && customVal>0){
+    priceVal = customVal;
+    priceLabelText = t('custom_price_label');
+    priceTypeVal = 'custom';
+  } else {
+    priceVal = currentPick[selectedPriceType];
+    priceLabelText = t(selectedPriceType==='wholesale'?'th_wholesale':selectedPriceType==='sticker'?'th_sticker':'th_discount');
+    priceTypeVal = selectedPriceType;
+  }
   cart.push({
     medId: currentPick.id,
     name: currentPick.name,
     unitLabel: currentPick.unitLabel,
     qty,
-    priceType: selectedPriceType,
-    priceLabel: selectedPriceType==='wholesale'?'نرخی کۆگا':selectedPriceType==='sticker'?'نرخی ستیکەر':'نرخی داشکان',
+    priceType: priceTypeVal,
+    priceLabel: priceLabelText,
     priceValue: priceVal,
     barcode: currentPick.barcode
   });
@@ -1038,7 +1307,7 @@ function addToCart(){
 }
 function renderCart(){
   const box = document.getElementById('cartBox');
-  if(cart.length===0){ box.innerHTML='<div class="empty">هیچ شتێک زیاد نەکراوە</div>'; document.getElementById('cartTotal').textContent='کۆی گشتی: 0'; return; }
+  if(cart.length===0){ box.innerHTML='<div class="empty">'+t('empty_generic')+'</div>'; document.getElementById('cartTotal').textContent=t('receipt_total')+': 0'; return; }
   let total=0;
   box.innerHTML = cart.map((c,i)=>{
     const sub = c.qty*c.priceValue;
@@ -1048,7 +1317,7 @@ function renderCart(){
       <div class="row" style="gap:8px;"><b>${fmt(sub)}</b><button class="btn danger small" onclick="removeFromCart(${i})">✕</button></div>
     </div>`;
   }).join('');
-  document.getElementById('cartTotal').textContent = 'کۆی گشتی: '+fmt(total);
+  document.getElementById('cartTotal').textContent = t('receipt_total')+': '+fmt(total);
 }
 function removeFromCart(i){ cart.splice(i,1); renderCart(); }
 function toggleDebtorField(){
@@ -1060,12 +1329,12 @@ function toggleDebtorField(){
   }
 }
 async function finalizeSale(){
-  if(cart.length===0){ alert('سەبەتە بەتاڵە'); return; }
+  if(cart.length===0){ alert(t('alert_cart_empty')); return; }
   const type = document.getElementById('saleType').value;
   let debtorName='';
   if(type==='debt'){
     debtorName = document.getElementById('debtorName').value.trim();
-    if(!debtorName){ alert('تکایە ناوی نەخۆش بنووسە'); return; }
+    if(!debtorName){ alert(t('alert_enter_patient_name')); return; }
   }
   const total = cart.reduce((a,c)=>a+c.qty*c.priceValue,0);
   const saleRecord = {
@@ -1086,17 +1355,17 @@ async function finalizeSale(){
       const newTotals = [];
       for(let i=0;i<cart.length;i++){
         const d = medDocs[i];
-        if(!d.exists) throw new Error('دەرمانی '+cart[i].name+' نەماوە لە کۆگا');
+        if(!d.exists) throw new Error(t('alert_med_out_of_stock_prefix')+cart[i].name+t('alert_med_out_of_stock_suffix'));
         const cur = d.data().totalUnits;
         const nt = cur - cart[i].qty;
-        if(nt<0) throw new Error('بڕی کۆگای '+cart[i].name+' پێویست نییە');
+        if(nt<0) throw new Error(t('alert_insufficient_stock_prefix')+cart[i].name+t('alert_insufficient_stock_suffix'));
         newTotals.push(nt);
       }
       medRefs.forEach((ref,i)=> tx.update(ref, {totalUnits:newTotals[i]}));
       tx.set(db.collection('sales').doc(saleRecord.id), saleRecord);
     });
   }catch(e){
-    alert('هەڵە لە تەواوکردنی فرۆشتن: '+e.message);
+    alert(t('alert_sale_error_prefix')+e.message);
     return;
   }
 
@@ -1128,15 +1397,15 @@ function buildReceiptHtml(sale){
       <div style="font-size:12px;color:#666;">${escapeHtml(settings.address||'')}</div>
     </div>
     <div style="font-size:12px;display:flex;justify-content:space-between;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin-bottom:8px;">
-      <span>بەروار: ${sale.date}</span><span>کات: ${sale.time}</span>
+      <span>${t('receipt_date')}: ${sale.date}</span><span>${t('receipt_time')}: ${sale.time}</span>
     </div>
-    ${sale.type==='debt' ? `<div style="font-size:12.5px;margin-bottom:6px;">جۆر: قەرز — ناوی نەخۆش: ${escapeHtml(sale.debtorName)}</div>` : `<div style="font-size:12.5px;margin-bottom:6px;">جۆر: نەقد</div>`}
+    ${sale.type==='debt' ? `<div style="font-size:12.5px;margin-bottom:6px;">${t('receipt_type')}: ${t('opt_debt')} — ${t('receipt_patient')}: ${escapeHtml(sale.debtorName)}</div>` : `<div style="font-size:12.5px;margin-bottom:6px;">${t('receipt_type')}: ${t('opt_cash')}</div>`}
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
-      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">دەرمان</th><th>بڕ</th><th style="text-align:left;">نرخ</th></tr></thead>
+      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">${t('th_medicine')}</th><th>${t('th_qty')}</th><th style="text-align:left;">${t('th_price')}</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;text-align:left;font-weight:800;">
-      کۆی گشتی: ${fmt(sale.total)}
+      ${t('receipt_total')}: ${fmt(sale.total)}
     </div>`;
 }
 function closeReceiptModal(){ document.getElementById('receiptModal').classList.remove('show'); }
@@ -1153,7 +1422,7 @@ function renderReturnSearchResults(){
   if(!q){ box.innerHTML=''; return; }
   const results = findMedByBarcodeOrName(q).slice(0,8);
   if(results.length===0){
-    box.innerHTML = '<div class="empty">هیچ دەرمانێک نەدۆزرایەوە</div>';
+    box.innerHTML = '<div class="empty">'+t('empty_no_meds')+'</div>';
     return;
   }
   box.innerHTML = '<div class="tblWrap" style="max-height:220px;margin-top:10px;"><table><tbody>' +
@@ -1172,8 +1441,8 @@ function pickMedForReturn(id){
   currentReturnPick = m;
   selectedReturnPriceType = 'sticker';
   document.getElementById('returnPickCard').style.display='block';
-  document.getElementById('returnPickName').textContent = m.name + ' — ماوەی کۆگا: ' + stockDisplay(m);
-  document.getElementById('returnQtyLabel').textContent = 'بڕی گەڕاندراوە ('+m.unitLabel+')';
+  document.getElementById('returnPickName').textContent = m.name + ' — ' + t('th_stock') + ': ' + stockDisplay(m);
+  document.getElementById('returnQtyLabel').textContent = t('label_return_qty')+' ('+m.unitLabel+')';
   document.getElementById('returnQty').value = 1;
   renderReturnPriceChoice();
 }
@@ -1181,9 +1450,9 @@ function renderReturnPriceChoice(){
   const box = document.getElementById('returnPriceChoice');
   const m = currentReturnPick;
   const opts = [
-    {key:'wholesale', label:'نرخی کۆگا', val:m.wholesale},
-    {key:'sticker', label:'نرخی ستیکەر', val:m.sticker},
-    {key:'discount', label:'نرخی داشکان', val:m.discount},
+    {key:'wholesale', label:t('th_wholesale'), val:m.wholesale},
+    {key:'sticker', label:t('th_sticker'), val:m.sticker},
+    {key:'discount', label:t('th_discount'), val:m.discount},
   ];
   box.innerHTML = opts.map(o=>`<div class="priceBtn ${selectedReturnPriceType===o.key?'sel':''}" onclick="selectReturnPrice('${o.key}')">
     <small>${o.label}</small><b>${fmt(o.val)}</b>
@@ -1193,7 +1462,7 @@ function selectReturnPrice(key){ selectedReturnPriceType = key; renderReturnPric
 function addToReturnCart(){
   if(!currentReturnPick) return;
   const qty = parseInt(document.getElementById('returnQty').value)||0;
-  if(qty<=0){ alert('بڕ دروست نییە'); return; }
+  if(qty<=0){ alert(t('alert_invalid_qty')); return; }
   const priceVal = currentReturnPick[selectedReturnPriceType];
   returnCart.push({
     medId: currentReturnPick.id,
@@ -1201,7 +1470,7 @@ function addToReturnCart(){
     unitLabel: currentReturnPick.unitLabel,
     qty,
     priceType: selectedReturnPriceType,
-    priceLabel: selectedReturnPriceType==='wholesale'?'نرخی کۆگا':selectedReturnPriceType==='sticker'?'نرخی ستیکەر':'نرخی داشکان',
+    priceLabel: t(selectedReturnPriceType==='wholesale'?'th_wholesale':selectedReturnPriceType==='sticker'?'th_sticker':'th_discount'),
     priceValue: priceVal,
     barcode: currentReturnPick.barcode
   });
@@ -1213,7 +1482,7 @@ function addToReturnCart(){
 }
 function renderReturnCart(){
   const box = document.getElementById('returnCartBox');
-  if(returnCart.length===0){ box.innerHTML='<div class="empty">هیچ شتێک زیاد نەکراوە</div>'; document.getElementById('returnCartTotal').textContent='کۆی پارەی گەڕاندنەوە: 0'; return; }
+  if(returnCart.length===0){ box.innerHTML='<div class="empty">'+t('empty_generic')+'</div>'; document.getElementById('returnCartTotal').textContent=t('grand_total_returned')+': 0'; return; }
   let total=0;
   box.innerHTML = returnCart.map((c,i)=>{
     const sub = c.qty*c.priceValue;
@@ -1223,12 +1492,12 @@ function renderReturnCart(){
       <div class="row" style="gap:8px;"><b>${fmt(sub)}</b><button class="btn danger small" onclick="removeFromReturnCart(${i})">✕</button></div>
     </div>`;
   }).join('');
-  document.getElementById('returnCartTotal').textContent = 'کۆی پارەی گەڕاندنەوە: '+fmt(total);
+  document.getElementById('returnCartTotal').textContent = t('grand_total_returned')+': '+fmt(total);
 }
 function removeFromReturnCart(i){ returnCart.splice(i,1); renderReturnCart(); }
 
 async function finalizeReturn(){
-  if(returnCart.length===0){ alert('سەبەتەی گەڕاندنەوە بەتاڵە'); return; }
+  if(returnCart.length===0){ alert(t('alert_return_cart_empty')); return; }
   const totalRefund = returnCart.reduce((a,c)=>a+c.qty*c.priceValue,0);
   const returnRecord = {
     id: uid(),
@@ -1244,14 +1513,14 @@ async function finalizeReturn(){
       const newTotals = [];
       for(let i=0;i<returnCart.length;i++){
         const d = medDocs[i];
-        if(!d.exists) throw new Error('دەرمانی '+returnCart[i].name+' نەماوە لە کۆگا');
+        if(!d.exists) throw new Error(t('alert_med_out_of_stock_prefix')+returnCart[i].name+t('alert_med_out_of_stock_suffix'));
         newTotals.push(d.data().totalUnits + returnCart[i].qty);
       }
       medRefs.forEach((ref,i)=> tx.update(ref, {totalUnits:newTotals[i]}));
       tx.set(db.collection('returns').doc(returnRecord.id), returnRecord);
     });
   }catch(e){
-    alert('هەڵە لە تەواوکردنی گەڕاندنەوە: '+e.message);
+    alert(t('alert_return_error_prefix')+e.message);
     return;
   }
   showReturnConfirmation(returnRecord);
@@ -1268,17 +1537,17 @@ function buildReturnReceiptHtml(rec){
     <div style="text-align:center;margin-bottom:10px;">
       <div style="font-size:17px;font-weight:800;">${escapeHtml(settings.pharmacyName)}</div>
       <div style="font-size:12px;color:#666;">${escapeHtml(settings.address||'')}</div>
-      <div style="font-size:13px;font-weight:700;color:var(--danger);margin-top:6px;">وەسڵی گەڕاندنەوە</div>
+      <div style="font-size:13px;font-weight:700;color:var(--danger);margin-top:6px;">${t('return_receipt_title')}</div>
     </div>
     <div style="font-size:12px;display:flex;justify-content:space-between;border-top:1px dashed #999;border-bottom:1px dashed #999;padding:6px 0;margin-bottom:8px;">
-      <span>بەروار: ${rec.date}</span><span>کات: ${rec.time}</span>
+      <span>${t('receipt_date')}: ${rec.date}</span><span>${t('receipt_time')}: ${rec.time}</span>
     </div>
     <table style="width:100%;font-size:12.5px;border-collapse:collapse;">
-      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">دەرمان</th><th>بڕ</th><th style="text-align:left;">نرخ</th></tr></thead>
+      <thead><tr style="border-bottom:1px solid #999;"><th style="text-align:right;">${t('th_medicine')}</th><th>${t('th_qty')}</th><th style="text-align:left;">${t('th_price')}</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;text-align:center;font-weight:800;font-size:15px;">
-      ئەم پارەیە بدەرەوە بۆ نەخۆش: ${fmt(rec.totalRefund)}
+      ${t('return_refund_prefix')}${fmt(rec.totalRefund)}
     </div>`;
 }
 function showReturnConfirmation(rec){
@@ -1295,12 +1564,12 @@ function renderReturnsList(){
   if(!tbody) return;
   const grandEl = document.getElementById('returnsGrandTotal');
   if(returns.length===0){
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">هیچ گەڕاندنەوەیەک تۆمار نەکراوە</td></tr>';
-    if(grandEl) grandEl.textContent = 'کۆی گشتی پارەی گەڕاوە: 0';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">'+t('empty_no_returns')+'</td></tr>';
+    if(grandEl) grandEl.textContent = t('grand_total_returned')+': 0';
     return;
   }
   const grandTotal = returns.reduce((a,r)=>a+r.total,0);
-  if(grandEl) grandEl.textContent = 'کۆی گشتی پارەی گەڕاوە: '+fmt(grandTotal);
+  if(grandEl) grandEl.textContent = t('grand_total_returned')+': '+fmt(grandTotal);
   const sorted = [...returns].sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
   let out='';
   sorted.forEach(r=>{
@@ -1325,7 +1594,7 @@ function renderDebtList(){
   if(q) debtSales = debtSales.filter(s=>s.debtorName.toLowerCase().includes(q));
   debtSales.sort((a,b)=> (b.date+b.time).localeCompare(a.date+a.time));
   if(debtSales.length===0){
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">هیچ قەرزێک تۆمار نەکراوە</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">'+t('empty_no_debt')+'</td></tr>';
     return;
   }
   let out='';
@@ -1338,8 +1607,8 @@ function renderDebtList(){
         <td>${it.qty} ${it.unitLabel}</td>
         <td>${fmt(it.qty*it.priceValue)}</td>
         <td>${s.date} ${s.time}</td>
-        <td>${s.paid ? '<span class="badge green">دراوەتەوە</span>' : '<span class="badge red">وەسڵ نەکراوە</span>'}</td>
-        <td>${s.paid ? '' : `<button class="btn ok small" onclick="markDebtPaid('${s.id}')">وەسڵکردن</button>`}</td>
+        <td>${s.paid ? '<span class="badge green">'+t('debt_paid')+'</span>' : '<span class="badge red">'+t('debt_unpaid')+'</span>'}</td>
+        <td>${s.paid ? '' : `<button class="btn ok small" onclick="markDebtPaid('${s.id}')">${t('btn_mark_paid')}</button>`}</td>
       </tr>`;
     });
   });
@@ -1349,7 +1618,7 @@ async function markDebtPaid(saleId){
   try{
     await db.collection('sales').doc(saleId).update({paid:true});
   }catch(e){
-    alert('هەڵە: '+e.message);
+    alert(t('alert_generic_error_prefix')+e.message);
   }
 }
 
@@ -1363,16 +1632,16 @@ function renderReport(){
   const dayReturns = returns.filter(r=>r.date===date);
   const returnTotal = dayReturns.reduce((a,r)=>a+r.total,0);
   document.getElementById('reportKpis').innerHTML = `
-    <div class="kpi"><span>کۆی گشتی فرۆشراو</span><b>${fmt(grand)}</b></div>
-    <div class="kpi"><span>نەقد</span><b>${fmt(cashTotal)}</b></div>
-    <div class="kpi"><span>قەرز</span><b>${fmt(debtTotal)}</b></div>
-    <div class="kpi"><span>پارەی گەڕاندراوە</span><b style="color:var(--danger);">${fmt(returnTotal)}</b></div>
-    <div class="kpi"><span>دەرەنجامی ڕاستەقینە</span><b>${fmt(grand-returnTotal)}</b></div>
-    <div class="kpi"><span>ژمارەی مامەڵە</span><b>${daySales.length}</b></div>
+    <div class="kpi"><span>${t('kpi_grand_total')}</span><b>${fmt(grand)}</b></div>
+    <div class="kpi"><span>${t('kpi_cash')}</span><b>${fmt(cashTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_debt')}</span><b>${fmt(debtTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_returned')}</span><b style="color:var(--danger);">${fmt(returnTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_net')}</span><b>${fmt(grand-returnTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_txn_count')}</span><b>${daySales.length}</b></div>
   `;
   const tbody = document.getElementById('reportTableBody');
   if(daySales.length===0){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">هیچ فرۆشتنێک لەم ڕۆژە تۆمار نەکراوە</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">'+t('empty_no_sales_day')+'</td></tr>';
   } else {
     let out='';
     daySales.sort((a,b)=>b.time.localeCompare(a.time)).forEach(s=>{
@@ -1382,7 +1651,7 @@ function renderReport(){
           <td>${escapeHtml(it.name)}</td>
           <td>${it.qty} ${it.unitLabel}</td>
           <td>${fmt(it.qty*it.priceValue)}</td>
-          <td>${s.type==='cash'?'نەقد':'قەرز'}</td>
+          <td>${s.type==='cash'?t('opt_cash'):t('opt_debt')}</td>
           <td>${s.type==='debt'?escapeHtml(s.debtorName):'—'}</td>
         </tr>`;
       });
@@ -1393,7 +1662,7 @@ function renderReport(){
   const rtbody = document.getElementById('reportReturnsTableBody');
   if(!rtbody) return;
   if(dayReturns.length===0){
-    rtbody.innerHTML = '<tr><td colspan="5" class="empty">هیچ گەڕاندنەوەیەک لەم ڕۆژە تۆمار نەکراوە</td></tr>';
+    rtbody.innerHTML = '<tr><td colspan="5" class="empty">'+t('empty_no_returns_day')+'</td></tr>';
     return;
   }
   let rout='';
@@ -1419,11 +1688,11 @@ function renderExpiry(){
     .filter(x=>x.days!==null && x.days<=60)
     .sort((a,b)=>a.days-b.days);
   if(list.length===0){
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">هیچ دەرمانێک نزیک نییە لە بەسەرچوون</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">'+t('empty_no_expiry')+'</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(x=>{
-    const badge = x.days<0 ? '<span class="badge red">بەسەرچووە</span>' : (x.days<=14 ? `<span class="badge red">${x.days} ڕۆژ</span>` : `<span class="badge orange">${x.days} ڕۆژ</span>`);
+    const badge = x.days<0 ? '<span class="badge red">'+t('badge_expired')+'</span>' : (x.days<=14 ? `<span class="badge red">${x.days} ${t('days_left_suffix')}</span>` : `<span class="badge orange">${x.days} ${t('days_left_suffix')}</span>`);
     return `<tr>
       <td>${escapeHtml(x.m.name)}</td>
       <td>${x.m.expiry}</td>
@@ -1443,18 +1712,18 @@ function fillSettingsForm(){
 async function saveGeneralSettings(){
   settings.pharmacyName = document.getElementById('setPharmName').value.trim() || settings.pharmacyName;
   settings.address = document.getElementById('setAddress').value.trim();
-  try{ await persistSettings(); }catch(e){ alert('هەڵە: '+e.message); return; }
+  try{ await persistSettings(); }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
   document.getElementById('loginPharmName').textContent = settings.pharmacyName;
   document.getElementById('sideBrand').textContent = settings.pharmacyName;
-  alert('پاشەکەوت کرا');
+  alert(t('alert_settings_saved'));
 }
 async function applyColors(persist){
   settings.colorPrimary = document.getElementById('setColorPrimary').value;
   settings.colorAccent = document.getElementById('setColorAccent').value;
   applyColorVars();
   if(persist){
-    try{ await persistSettings(); alert('ڕەنگەکان پاشەکەوت کران'); }
-    catch(e){ alert('هەڵە: '+e.message); }
+    try{ await persistSettings(); alert(t('alert_colors_saved')); }
+    catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
   }
 }
 async function savePasswords(){
@@ -1462,14 +1731,14 @@ async function savePasswords(){
   const ep = document.getElementById('setEmployeePass').value;
   if(mp) settings.managerPass = mp;
   if(ep) settings.employeePass = ep;
-  try{ await persistSettings(); }catch(e){ alert('هەڵە: '+e.message); return; }
+  try{ await persistSettings(); }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
   document.getElementById('setManagerPass').value='';
   document.getElementById('setEmployeePass').value='';
-  alert('ووشە نهێنیەکان نوێ کرانەوە');
+  alert(t('alert_passwords_updated'));
 }
 async function resetAllData(){
-  if(!confirm('ئایا دڵنیای؟ هەموو داتای کۆگا، فرۆشتن و قەرزەکان دەسڕدرێتەوە!')) return;
-  if(!confirm('دووبارە دڵنیابەرەوە: ئەم کردارە ناگەڕێتەوە.')) return;
+  if(!confirm(t('confirm_reset_1'))) return;
+  if(!confirm(t('confirm_reset_2'))) return;
   try{
     const medSnap = await db.collection('medicines').get();
     const saleSnap = await db.collection('sales').get();
@@ -1477,19 +1746,31 @@ async function resetAllData(){
     medSnap.docs.forEach(d=>batch.delete(d.ref));
     saleSnap.docs.forEach(d=>batch.delete(d.ref));
     await batch.commit();
-  }catch(e){ alert('هەڵە: '+e.message); return; }
-  alert('هەموو داتا سڕدرایەوە');
+  }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+  alert(t('alert_data_reset_done'));
 }
+
+/* ===================== ONLINE / OFFLINE BANNER ===================== */
+function updateOnlineBanner(){
+  const banner = document.getElementById('offlineBanner');
+  if(!banner) return;
+  banner.classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineBanner);
+window.addEventListener('offline', updateOnlineBanner);
 
 /* ===================== INIT ===================== */
 (async function init(){
   try{
+    await persistenceReady;
     await initSettings();
     applyColorVars();
     document.getElementById('loginPharmName').textContent = settings.pharmacyName;
     document.getElementById('sideBrand').textContent = settings.pharmacyName;
     document.getElementById('reportDate').value = todayStr();
     startListeners();
+    applyLanguage();
+    updateOnlineBanner();
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('loginScreen').style.display='flex';
   }catch(e){
