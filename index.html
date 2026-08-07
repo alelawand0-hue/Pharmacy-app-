@@ -293,6 +293,14 @@
     padding:7px 10px;
   }
   #offlineBanner.show{display:block;}
+
+  /* ---------- PERMISSIONS LIST ---------- */
+  .permRow{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fbfdff;
+  }
+  .permRow input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);}
+  .permRow label{font-size:13.5px;font-weight:600;color:var(--ink);flex:1;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -356,7 +364,7 @@
           <h2>📦 <span data-i18n="nav_warehouse">کۆگا</span></h2>
           <button class="btn blue" onclick="openMedModal()" data-i18n="btn_add_medicine">+ زیادکردنی دەرمان</button>
         </div>
-        <div class="card">
+        <div class="card" id="warehouseValueCard">
           <div class="row between" style="margin-bottom:10px;">
             <div class="cardTitle" style="margin:0;" data-i18n="warehouse_value_title">جەردی کۆگا (بەهای پارە)</div>
             <button class="btn ghost small" onclick="renderWarehouseValue()" data-i18n="btn_refresh_value">🔄 نوێکردنەوە</button>
@@ -511,6 +519,12 @@
         </div>
         <div class="kpis" id="reportKpis"></div>
         <div class="card">
+          <div class="cardTitle" data-i18n="chart_title">ئاڕاستەی فرۆشتن (١٤ ڕۆژی ڕابردوو)</div>
+          <div style="position:relative;height:260px;">
+            <canvas id="salesChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
           <div class="cardTitle" data-i18n="today_sales_title">فرۆشتنەکانی ئەم ڕۆژە</div>
           <div class="tblWrap">
             <table>
@@ -577,6 +591,13 @@
             <div class="field"><label class="lbl" data-i18n="label_new_employee_pass">ووشەی نهێنی نوێی کارمەند</label><input type="password" id="setEmployeePass" placeholder="بەتاڵی بهێڵەوە ئەگەر نەتگۆڕی" data-i18n-placeholder="ph_leave_blank"></div>
           </div>
           <button class="btn blue" onclick="savePasswords()" data-i18n="btn_change_passwords">گۆڕینی ووشە نهێنیەکان</button>
+        </div>
+
+        <div class="card">
+          <div class="cardTitle" data-i18n="settings_perms_title">دەسەڵاتەکانی کارمەند</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;" data-i18n="settings_perms_hint">دیاری بکە کارمەند دەستی بە کام بەشەکان هەبێت. بەڕێوەبەر هەمیشە دەستی بە هەموو بەشەکان هەیە.</div>
+          <div id="permsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
+          <button class="btn blue" onclick="saveEmployeePermissions()" data-i18n="btn_save_perms">پاشەکەوتکردنی دەسەڵاتەکان</button>
         </div>
 
         <div class="card">
@@ -675,6 +696,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 /* ===================== FIREBASE ===================== */
 const firebaseConfig = {
@@ -701,7 +724,8 @@ function defaultSettings(){
     colorPrimary:'#0f4c8c',
     colorAccent:'#3f8ee8',
     managerPass:'1234',
-    employeePass:'1234'
+    employeePass:'1234',
+    employeePermissions:['warehouse','sales','returns','expiry']
   };
 }
 async function initSettings(){
@@ -828,6 +852,11 @@ const translations = {
     kpi_discount_value:'کۆی بەها بە نرخی داشکان', kpi_total_items:'ژمارەی جۆرەکانی دەرمان',
     label_custom_price:'نرخی تایبەت (ئارەزوومەندانە)', ph_custom_price:'نرخەکە بنووسە',
     custom_price_label:'نرخی تایبەت',
+    chart_title:'ئاڕاستەی فرۆشتن (١٤ ڕۆژی ڕابردوو)',
+    settings_perms_title:'دەسەڵاتەکانی کارمەند',
+    settings_perms_hint:'دیاری بکە کارمەند دەستی بە کام بەشەکان هەبێت. بەڕێوەبەر هەمیشە دەستی بە هەموو بەشەکان هەیە.',
+    btn_save_perms:'پاشەکەوتکردنی دەسەڵاتەکان',
+    alert_perms_saved:'دەسەڵاتەکان پاشەکەوت کران', alert_perms_need_one:'پێویستە لانیکەم یەک بەش هەڵبژێریت',
   },
   en: {
     login_subtitle:'Please select the user type and enter the password',
@@ -903,6 +932,11 @@ const translations = {
     kpi_discount_value:'Total Value (Discount)', kpi_total_items:'Number of Medicine Types',
     label_custom_price:'Custom Price (optional)', ph_custom_price:'Enter the price',
     custom_price_label:'Custom Price',
+    chart_title:'Sales Trend (Last 14 Days)',
+    settings_perms_title:'Employee Permissions',
+    settings_perms_hint:'Choose which sections the employee can access. The manager always has access to everything.',
+    btn_save_perms:'Save Permissions',
+    alert_perms_saved:'Permissions saved', alert_perms_need_one:'Please select at least one section',
   }
 };
 function t(key){
@@ -924,6 +958,7 @@ function applyLanguage(){
     safeRenderAll();
     renderSaleSearchResults(); renderCart();
     renderReturnSearchResults(); renderReturnCart(); renderReturnsList();
+    renderPermsList();
   }
 }
 function setLang(lang){
@@ -957,7 +992,11 @@ function doLogin(){
     document.getElementById('app').style.display='block';
     document.getElementById('sideRole').textContent = currentRole==='manager' ? '🧑\u200d💼 '+t('role_manager') : '🧑\u200d⚕️ '+t('role_employee');
     applyPermissions();
-    const firstView = currentRole==='manager' ? 'warehouse' : 'warehouse';
+    let firstView = 'warehouse';
+    if(currentRole==='employee'){
+      const allowed = getAllowedEmployeeSections();
+      firstView = allowed.includes('warehouse') ? 'warehouse' : (allowed[0] || 'warehouse');
+    }
     switchView(firstView);
     document.getElementById('loginErr').textContent='';
     document.getElementById('loginPass').value='';
@@ -971,8 +1010,11 @@ function logout(){
   document.getElementById('loginScreen').style.display='flex';
 }
 
+function getAllowedEmployeeSections(){
+  return settings.employeePermissions || ['warehouse','sales','returns','expiry'];
+}
 function applyPermissions(){
-  const allowedEmployee=['warehouse','sales','returns','expiry'];
+  const allowedEmployee = getAllowedEmployeeSections();
   document.querySelectorAll('.navBtn').forEach(btn=>{
     const v = btn.getAttribute('data-view');
     if(currentRole==='employee' && !allowedEmployee.includes(v)){
@@ -985,7 +1027,7 @@ function applyPermissions(){
 
 /* ===================== NAV ===================== */
 function switchView(name){
-  if(currentRole==='employee' && !['warehouse','sales','returns','expiry'].includes(name)) return;
+  if(currentRole==='employee' && !getAllowedEmployeeSections().includes(name)) return;
   document.querySelectorAll('section[id^="view-"]').forEach(s=>s.style.display='none');
   document.getElementById('view-'+name).style.display='block';
   document.querySelectorAll('.navBtn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===name));
@@ -1071,6 +1113,12 @@ function renderWarehouse(){
   }).join('');
 }
 function renderWarehouseValue(){
+  const card = document.getElementById('warehouseValueCard');
+  if(currentRole==='employee'){
+    if(card) card.style.display='none';
+    return;
+  }
+  if(card) card.style.display='block';
   const box = document.getElementById('warehouseValueKpis');
   if(!box) return;
   let wholesaleTotal=0, stickerTotal=0, discountTotal=0;
@@ -1660,24 +1708,64 @@ function renderReport(){
   }
 
   const rtbody = document.getElementById('reportReturnsTableBody');
-  if(!rtbody) return;
-  if(dayReturns.length===0){
-    rtbody.innerHTML = '<tr><td colspan="5" class="empty">'+t('empty_no_returns_day')+'</td></tr>';
-    return;
+  if(rtbody){
+    if(dayReturns.length===0){
+      rtbody.innerHTML = '<tr><td colspan="5" class="empty">'+t('empty_no_returns_day')+'</td></tr>';
+    } else {
+      let rout='';
+      dayReturns.sort((a,b)=>b.time.localeCompare(a.time)).forEach(r=>{
+        r.items.forEach(it=>{
+          rout += `<tr>
+            <td>${r.time}</td>
+            <td>${escapeHtml(it.name)}</td>
+            <td>${it.qty} ${it.unitLabel}</td>
+            <td>${fmt(it.qty*it.priceValue)}</td>
+            <td>${r.patientName ? escapeHtml(r.patientName) : '—'}</td>
+          </tr>`;
+        });
+      });
+      rtbody.innerHTML = rout;
+    }
   }
-  let rout='';
-  dayReturns.sort((a,b)=>b.time.localeCompare(a.time)).forEach(r=>{
-    r.items.forEach(it=>{
-      rout += `<tr>
-        <td>${r.time}</td>
-        <td>${escapeHtml(it.name)}</td>
-        <td>${it.qty} ${it.unitLabel}</td>
-        <td>${fmt(it.qty*it.priceValue)}</td>
-        <td>${r.patientName ? escapeHtml(r.patientName) : '—'}</td>
-      </tr>`;
-    });
+  renderSalesChart();
+}
+
+let salesChartInstance = null;
+function renderSalesChart(){
+  const section = document.getElementById('view-reports');
+  const canvas = document.getElementById('salesChart');
+  if(!section || section.style.display==='none' || !canvas || typeof Chart==='undefined') return;
+  const labels = [];
+  const cashData = [], debtData = [], returnData = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    labels.push(ds.slice(5));
+    const daySales = sales.filter(s=>s.date===ds);
+    cashData.push(daySales.filter(s=>s.type==='cash').reduce((a,s)=>a+s.total,0));
+    debtData.push(daySales.filter(s=>s.type==='debt').reduce((a,s)=>a+s.total,0));
+    const dayReturns = returns.filter(r=>r.date===ds);
+    returnData.push(dayReturns.reduce((a,r)=>a+r.total,0));
+  }
+  if(salesChartInstance) salesChartInstance.destroy();
+  salesChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: t('opt_cash'), data: cashData, backgroundColor: '#0f4c8c' },
+        { label: t('opt_debt'), data: debtData, backgroundColor: '#3f8ee8' },
+        { label: t('kpi_returned'), data: returnData, backgroundColor: '#c0392b' },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' } }
+    }
   });
-  rtbody.innerHTML = rout;
 }
 
 /* ===================== EXPIRY VIEW ===================== */
@@ -1708,6 +1796,38 @@ function fillSettingsForm(){
   document.getElementById('setAddress').value = settings.address;
   document.getElementById('setColorPrimary').value = settings.colorPrimary;
   document.getElementById('setColorAccent').value = settings.colorAccent;
+  renderPermsList();
+}
+const PERM_SECTIONS = [
+  {key:'warehouse', label:'nav_warehouse'},
+  {key:'sales', label:'nav_sales'},
+  {key:'returns', label:'nav_returns'},
+  {key:'debt', label:'nav_debt'},
+  {key:'reports', label:'nav_reports'},
+  {key:'expiry', label:'nav_expiry'},
+  {key:'settings', label:'nav_settings'},
+];
+function renderPermsList(){
+  const box = document.getElementById('permsList');
+  if(!box) return;
+  const current = getAllowedEmployeeSections();
+  box.innerHTML = PERM_SECTIONS.map(s=>`
+    <div class="permRow">
+      <input type="checkbox" id="perm_${s.key}" ${current.includes(s.key)?'checked':''}>
+      <label for="perm_${s.key}">${t(s.label)}</label>
+    </div>
+  `).join('');
+}
+async function saveEmployeePermissions(){
+  const selected = PERM_SECTIONS.map(s=>s.key).filter(k=>{
+    const el = document.getElementById('perm_'+k);
+    return el && el.checked;
+  });
+  if(selected.length===0){ alert(t('alert_perms_need_one')); return; }
+  settings.employeePermissions = selected;
+  try{ await persistSettings(); }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+  applyPermissions();
+  alert(t('alert_perms_saved'));
 }
 async function saveGeneralSettings(){
   settings.pharmacyName = document.getElementById('setPharmName').value.trim() || settings.pharmacyName;
