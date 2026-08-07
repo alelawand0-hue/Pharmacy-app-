@@ -372,13 +372,13 @@
           <div class="kpis" id="warehouseValueKpis"></div>
         </div>
         <div class="card">
-          <input type="text" id="whSearch" placeholder="گەران بە ناو یان بارکۆدی دەرمان..." data-i18n-placeholder="ph_wh_search" oninput="renderWarehouse()">
+          <input type="text" id="whSearch" placeholder="گەران بە ناو، کۆمپانیا یان بارکۆدی دەرمان..." data-i18n-placeholder="ph_wh_search" oninput="renderWarehouse()">
         </div>
         <div class="card">
           <div class="tblWrap">
             <table>
               <thead><tr>
-                <th data-i18n="th_name">ناو</th><th data-i18n="th_type">جۆر</th><th data-i18n="th_barcode">بارکۆد</th><th data-i18n="th_expiry">بەروار بەسەرچوون</th>
+                <th data-i18n="th_name">ناو</th><th data-i18n="th_company">کۆمپانیا</th><th data-i18n="th_type">جۆر</th><th data-i18n="th_barcode">بارکۆد</th><th data-i18n="th_expiry">بەروار بەسەرچوون</th>
                 <th data-i18n="th_stock">بڕی مابوو</th><th data-i18n="th_wholesale">نرخی کۆگا</th><th data-i18n="th_sticker">نرخی ستیکەر</th><th data-i18n="th_discount">نرخی داشکان</th><th data-i18n="th_action">کردار</th>
               </tr></thead>
               <tbody id="whTableBody"></tbody>
@@ -622,7 +622,7 @@
         <div class="row"><input type="text" id="medBarcode"><button class="btn ghost small" onclick="genBarcode()" data-i18n="btn_generate">دروستکردن</button><button class="btn blue small" type="button" onclick="openScanner('medBarcode')" data-i18n="btn_scan">📷 سکان</button></div>
       </div>
     </div>
-    <div class="grid2">
+    <div class="grid3">
       <div class="field">
         <label class="lbl" data-i18n="label_med_type">جۆری دەرمان</label>
         <select id="medType">
@@ -635,6 +635,7 @@
           <option>ئینفیوژن (Infusion)</option>
         </select>
       </div>
+      <div class="field"><label class="lbl" data-i18n="label_med_company">ناوی کۆمپانیا</label><input type="text" id="medCompany"></div>
       <div class="field"><label class="lbl" data-i18n="th_expiry">بەروار بەسەرچوون</label><input type="date" id="medExpiry"></div>
     </div>
     <div class="grid3">
@@ -784,7 +785,7 @@ const translations = {
     label_password:'ووشەی نهێنی', btn_login:'چوونەژوورەوە',
     nav_warehouse:'کۆگا', nav_sales:'فرۆشتن', nav_returns:'گەڕاندنەوە', nav_debt:'قەرز',
     nav_reports:'راپۆرت', nav_expiry:'ئێکسپایەر', nav_settings:'ڕێکخستن', btn_logout:'دەرچوون',
-    btn_add_medicine:'+ زیادکردنی دەرمان', ph_wh_search:'گەران بە ناو یان بارکۆدی دەرمان...',
+    btn_add_medicine:'+ زیادکردنی دەرمان', ph_wh_search:'گەران بە ناو، کۆمپانیا یان بارکۆدی دەرمان...',
     th_name:'ناو', th_type:'جۆر', th_barcode:'بارکۆد', th_expiry:'بەروار بەسەرچوون',
     th_stock:'بڕی مابوو', th_wholesale:'نرخی کۆگا', th_sticker:'نرخی ستیکەر', th_discount:'نرخی داشکان',
     th_action:'کردار', btn_edit:'دەستکاری',
@@ -816,6 +817,7 @@ const translations = {
     modal_add_title:'زیادکردنی دەرمانی نوێ', modal_edit_title:'دەستکاریکردنی دەرمان',
     label_med_name:'ناوی دەرمان *', btn_generate:'دروستکردن', label_med_type:'جۆری دەرمان',
     label_pack_size:'دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)',
+    label_med_company:'ناوی کۆمپانیا', th_company:'کۆمپانیا',
     label_total_units:'کۆی گشتی لە کۆگا (دانە/شریت)', label_unit_name:'ناوی یەکە (دانە/شریت/پاکەت)',
     btn_delete:'سڕینەوە', btn_cancel:'پاشگەزبوونەوە',
     receipt_title:'وەسڵ ئامادەیە', btn_close:'داخستن', btn_print:'🖨️ چاپکردن',
@@ -864,7 +866,7 @@ const translations = {
     label_password:'Password', btn_login:'Login',
     nav_warehouse:'Warehouse', nav_sales:'Sales', nav_returns:'Returns', nav_debt:'Debt',
     nav_reports:'Reports', nav_expiry:'Expiry', nav_settings:'Settings', btn_logout:'Logout',
-    btn_add_medicine:'+ Add Medicine', ph_wh_search:'Search by medicine name or barcode...',
+    btn_add_medicine:'+ Add Medicine', ph_wh_search:'Search by medicine name, company, or barcode...',
     th_name:'Name', th_type:'Type', th_barcode:'Barcode', th_expiry:'Expiry Date',
     th_stock:'Remaining Stock', th_wholesale:'Wholesale Price', th_sticker:'Sticker Price', th_discount:'Discount Price',
     th_action:'Action', btn_edit:'Edit',
@@ -896,6 +898,7 @@ const translations = {
     modal_add_title:'Add New Medicine', modal_edit_title:'Edit Medicine',
     label_med_name:'Medicine Name *', btn_generate:'Generate', label_med_type:'Medicine Type',
     label_pack_size:'Units per carton (1 if no carton)',
+    label_med_company:'Company Name', th_company:'Company',
     label_total_units:'Total Stock (units)', label_unit_name:'Unit Name (piece/strip/pack)',
     btn_delete:'Delete', btn_cancel:'Cancel',
     receipt_title:'Receipt Ready', btn_close:'Close', btn_print:'🖨️ Print',
@@ -1086,10 +1089,10 @@ function renderWarehouse(){
   const tbody = document.getElementById('whTableBody');
   let list = medicines;
   if(q){
-    list = medicines.filter(m => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q));
+    list = medicines.filter(m => m.name.toLowerCase().includes(q) || m.barcode.toLowerCase().includes(q) || (m.company||'').toLowerCase().includes(q));
   }
   if(list.length===0){
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">'+t('empty_no_meds')+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">'+t('empty_no_meds')+'</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(m=>{
@@ -1101,6 +1104,7 @@ function renderWarehouse(){
     }
     return `<tr>
       <td>${escapeHtml(m.name)}</td>
+      <td>${escapeHtml(m.company||'—')}</td>
       <td>${escapeHtml(m.type)}</td>
       <td>${escapeHtml(m.barcode)}</td>
       <td>${m.expiry||'—'} ${expBadge}</td>
@@ -1153,6 +1157,7 @@ function openMedModal(id){
     document.getElementById('medName').value=m.name;
     document.getElementById('medBarcode').value=m.barcode;
     document.getElementById('medType').value=m.type;
+    document.getElementById('medCompany').value=m.company||'';
     document.getElementById('medExpiry').value=m.expiry||'';
     document.getElementById('medPackSize').value=m.packSize;
     document.getElementById('medTotalUnits').value=m.totalUnits;
@@ -1167,6 +1172,7 @@ function openMedModal(id){
     document.getElementById('medName').value='';
     document.getElementById('medBarcode').value='';
     document.getElementById('medType').value='حەب (Tablet)';
+    document.getElementById('medCompany').value='';
     document.getElementById('medExpiry').value='';
     document.getElementById('medPackSize').value=1;
     document.getElementById('medTotalUnits').value=0;
@@ -1238,6 +1244,7 @@ async function saveMed(){
     name,
     barcode,
     type: document.getElementById('medType').value,
+    company: document.getElementById('medCompany').value.trim(),
     expiry: document.getElementById('medExpiry').value,
     packSize: Math.max(1, parseInt(document.getElementById('medPackSize').value)||1),
     totalUnits: Math.max(0, parseInt(document.getElementById('medTotalUnits').value)||0),
