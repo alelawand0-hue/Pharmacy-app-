@@ -103,7 +103,7 @@
 
   /* ---------- APP SHELL ---------- */
   #app{display:none;min-height:100vh;}
-  .shell{display:flex;min-height:100vh;}
+  .shell{display:flex;min-height:100vh;position:relative;}
   .sidebar{
     width:220px;
     background:var(--primary-dark);
@@ -138,6 +138,7 @@
     display:flex;
     align-items:center;
     gap:10px;
+    width:100%;
   }
   .navBtn .ic{font-size:16px;}
   .navBtn:hover{background:rgba(255,255,255,.08);}
@@ -152,7 +153,7 @@
     font-size:13px;
     font-weight:600;
   }
-  .main{flex:1;padding:22px 26px;overflow-x:auto;}
+  .main{flex:1;padding:22px 26px;min-width:0;}
   .topbar{
     display:flex;
     justify-content:space-between;
@@ -171,15 +172,49 @@
   }
   .cardTitle{font-size:14px;font-weight:700;color:var(--primary-dark);margin:0 0 14px;}
 
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);}
+  table{border-collapse:collapse;font-size:13.5px;min-width:100%;}
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
   th{color:var(--muted);font-weight:700;background:#f2f8ff;position:sticky;top:0;}
   tr:hover td{background:#f8fbff;}
-  .tblWrap{max-height:420px;overflow:auto;border-radius:10px;border:1px solid var(--line);}
+  .tblWrap{max-height:420px;overflow:auto;border-radius:10px;border:1px solid var(--line);-webkit-overflow-scrolling:touch;}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
   @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+  /* ---------- MOBILE TOPBAR & DRAWER ---------- */
+  .mobileTopbar{
+    display:none;align-items:center;gap:12px;
+    background:var(--primary-dark);color:#fff;
+    padding:13px 16px;position:sticky;top:0;z-index:30;
+    margin:-22px -26px 18px;
+  }
+  .mobileTopbar button{
+    background:rgba(255,255,255,.14);border:none;color:#fff;
+    font-size:19px;width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  }
+  .mobileTopbar .mtTitle{font-weight:800;font-size:15px;}
+  .sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(6,20,40,.5);z-index:39;}
+  .sidebarOverlay.show{display:block;}
+
+  @media(max-width:860px){
+    .mobileTopbar{display:flex;}
+    .sidebar{
+      position:fixed;top:0;right:0;height:100vh;z-index:40;width:250px;
+      transform:translateX(100%);transition:transform .25s ease;
+      box-shadow:-6px 0 30px rgba(0,0,0,.3);overflow-y:auto;
+    }
+    html[dir="ltr"] .sidebar{ right:auto; left:0; transform:translateX(-100%); }
+    .sidebar.open{transform:translateX(0);}
+    .main{padding:14px;}
+    .mobileTopbar{margin:-14px -14px 16px;}
+    .topbar h2{font-size:17px;}
+    .card{padding:14px;}
+  }
+  @media(max-width:420px){
+    .kpi b{font-size:16px;}
+    .btn{padding:9px 12px;}
+  }
 
   .btn{
     border:none;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:700;
@@ -232,6 +267,7 @@
     max-height:88vh;overflow:auto;
   }
   .modalCard h3{margin:0 0 16px;color:var(--primary-dark);}
+  @media(max-width:420px){ .modalCard{padding:16px;} }
   .row{display:flex;gap:10px;align-items:center;}
   .row.between{justify-content:space-between;}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
@@ -356,7 +392,13 @@
       <button class="logoutBtn" onclick="logout()">🚪 <span data-i18n="btn_logout">دەرچوون</span></button>
     </div>
 
+    <div class="sidebarOverlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <div class="main">
+      <div class="mobileTopbar">
+        <button type="button" onclick="toggleSidebar()">☰</button>
+        <div class="mtTitle" id="mobileTitle">سەیدەلیە</div>
+      </div>
 
       <!-- ============ WAREHOUSE ============ -->
       <section id="view-warehouse" style="display:none;">
@@ -632,7 +674,8 @@
           <option>کرێم (Cream)</option><option>ئۆینتمێنت (Ointment)</option><option>شامپۆ (Shampoo)</option>
           <option>دەرمانی دەمی (Oral Solution)</option><option>ئینجێکشن (Injection)</option>
           <option>سرینج (Syringe)</option><option>حەب (Tablet)</option><option>کپسوڵ (Capsule)</option>
-          <option>ئینفیوژن (Infusion)</option>
+          <option>ئینفیوژن (Infusion)</option><option>شیر (Milk)</option><option>دەرزی (Injection)</option>
+          <option>لەفاف (Gauze)</option><option>باندج (Bandage)</option><option>هیتر (Other)</option>
         </select>
       </div>
       <div class="field"><label class="lbl" data-i18n="label_med_company">ناوی کۆمپانیا</label><input type="text" id="medCompany"></div>
@@ -775,6 +818,7 @@ let medicines = [];
 let sales = [];
 let returns = [];
 let currentRole = null; // 'manager' | 'employee'
+let currentView = 'warehouse';
 let currentLang = localStorage.getItem('phx_lang') || 'ku';
 
 /* ===================== TRANSLATIONS ===================== */
@@ -956,6 +1000,8 @@ function applyLanguage(){
   if(currentRole){
     document.getElementById('sideRole').textContent = currentRole==='manager'
       ? '🧑\u200d💼 '+t('role_manager') : '🧑\u200d⚕️ '+t('role_employee');
+    const mt = document.getElementById('mobileTitle');
+    if(mt) mt.textContent = t(VIEW_TITLE_KEY[currentView] || 'nav_warehouse');
   }
   if(document.getElementById('app').style.display!=='none'){
     safeRenderAll();
@@ -1029,11 +1075,19 @@ function applyPermissions(){
 }
 
 /* ===================== NAV ===================== */
+const VIEW_TITLE_KEY = {
+  warehouse:'nav_warehouse', sales:'nav_sales', returns:'nav_returns', debt:'nav_debt',
+  reports:'nav_reports', expiry:'nav_expiry', settings:'nav_settings'
+};
 function switchView(name){
   if(currentRole==='employee' && !getAllowedEmployeeSections().includes(name)) return;
+  currentView = name;
   document.querySelectorAll('section[id^="view-"]').forEach(s=>s.style.display='none');
   document.getElementById('view-'+name).style.display='block';
   document.querySelectorAll('.navBtn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-view')===name));
+  const mt = document.getElementById('mobileTitle');
+  if(mt) mt.textContent = t(VIEW_TITLE_KEY[name] || 'nav_warehouse');
+  closeSidebar();
   if(name==='warehouse') renderWarehouse();
   if(name==='sales') { renderSaleSearchResults(); renderCart(); }
   if(name==='returns') { renderReturnSearchResults(); renderReturnCart(); renderReturnsList(); }
@@ -1044,6 +1098,14 @@ function switchView(name){
   }
   if(name==='expiry') renderExpiry();
   if(name==='settings') fillSettingsForm();
+}
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
 }
 
 /* ===================== COLORS ===================== */
