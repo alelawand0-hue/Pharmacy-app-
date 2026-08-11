@@ -387,6 +387,7 @@
       <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> <span data-i18n="nav_debt">قەرز</span></button>
       <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> <span data-i18n="nav_reports">راپۆرت</span></button>
       <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> <span data-i18n="nav_expiry">ئێکسپایەر</span></button>
+      <button class="navBtn" data-view="purchases" onclick="switchView('purchases')"><span class="ic">📥</span> <span data-i18n="nav_purchases">قائیمە</span></button>
       <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> <span data-i18n="nav_settings">ڕێکخستن</span></button>
       <div class="spacer"></div>
       <button class="logoutBtn" onclick="logout()">🚪 <span data-i18n="btn_logout">دەرچوون</span></button>
@@ -599,6 +600,67 @@
         </div>
       </section>
 
+      <!-- ============ PURCHASES (قائیمە) ============ -->
+      <section id="view-purchases" style="display:none;">
+        <div class="topbar"><h2>📥 <span data-i18n="nav_purchases">قائیمە</span></h2></div>
+
+        <div id="purchSuppliersView">
+          <div class="card">
+            <label class="lbl" data-i18n="label_purchase_search">گەڕان بە ناوی مادە، بارکۆد یان ژمارەی قایمە (لە هەموو کۆگاکان)</label>
+            <input type="text" id="purchaseSearch" placeholder="گەڕان..." data-i18n-placeholder="ph_purchase_search" oninput="renderPurchaseSearch()">
+          </div>
+          <div id="purchaseSearchResults" style="display:none;"></div>
+          <div class="card" id="addSupplierCard">
+            <div class="row" style="gap:8px;">
+              <input type="text" id="newSupplierName" placeholder="ناوی کۆگا/کۆمپانیا (نموونە: نشمیل)" data-i18n-placeholder="ph_supplier_name" style="flex:1;">
+              <button class="btn blue" onclick="addSupplier()" data-i18n="btn_add_supplier">+ زیادکردنی کۆگا</button>
+            </div>
+          </div>
+          <div id="supplierListBox"></div>
+        </div>
+
+        <div id="purchInvoicesView" style="display:none;">
+          <div class="card">
+            <div class="row between" style="flex-wrap:wrap;gap:10px;">
+              <button class="btn ghost small" onclick="backToSuppliers()">→ <span data-i18n="btn_back">گەڕانەوە</span></button>
+              <div class="cardTitle" id="invoicesSupplierTitle" style="margin:0;"></div>
+              <div class="row" style="gap:8px;">
+                <button class="btn ghost small" onclick="openFieldsModal()" data-i18n="btn_configure_fields">⚙️ خانەکان</button>
+                <button class="btn blue small" onclick="openNewInvoice()" data-i18n="btn_add_invoice">+ زیادکردنی قایمە</button>
+              </div>
+            </div>
+          </div>
+          <div id="invoiceListBox"></div>
+        </div>
+
+        <div id="purchFormView" style="display:none;">
+          <div class="card">
+            <button class="btn ghost small" onclick="backToInvoiceList()">→ <span data-i18n="btn_back">گەڕانەوە</span></button>
+            <div class="grid2" style="margin-top:12px;">
+              <div class="field">
+                <label class="lbl" data-i18n="label_invoice_number">ژمارەی قایمە</label>
+                <input type="text" id="invoiceNumber">
+              </div>
+              <div class="field">
+                <label class="lbl" data-i18n="label_invoice_date">بەروار</label>
+                <input type="date" id="invoiceDate">
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="cardTitle" data-i18n="label_invoice_items">مادەکان</div>
+            <div class="tblWrap" style="max-height:none;">
+              <table>
+                <thead><tr id="invoiceItemsHead"></tr></thead>
+                <tbody id="invoiceItemsBody"></tbody>
+              </table>
+            </div>
+            <button class="btn ghost small" style="margin-top:10px;" onclick="addInvoiceRow()" data-i18n="btn_add_row">+ زیادکردنی ڕیز</button>
+          </div>
+          <button class="btn blue" onclick="saveInvoice()" data-i18n="btn_save_invoice">پاشەکەوتکردنی قایمە</button>
+        </div>
+      </section>
+
       <!-- ============ SETTINGS ============ -->
       <section id="view-settings" style="display:none;">
         <div class="topbar"><h2>⚙️ <span data-i18n="nav_settings">ڕێکخستن</span></h2></div>
@@ -726,6 +788,25 @@
 </div>
 
 <!-- ===================== BARCODE SCANNER MODAL ===================== -->
+<!-- ===================== SUPPLIER FIELDS CONFIG MODAL ===================== -->
+<div class="modalBg" id="fieldsModal">
+  <div class="modalCard" style="max-width:380px;">
+    <h3 data-i18n="fields_modal_title">خانەکانی قایمە</h3>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;" data-i18n="fields_modal_hint">دیاری بکە قایمەکانی ئەم کۆگایە کام خانەکانی پێویستە. ناوی مادە هەمیشە پیشان دەدرێت.</div>
+    <div id="fieldsCheckList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
+    <div style="font-size:12.5px;font-weight:700;color:var(--primary-dark);margin-bottom:8px;" data-i18n="label_custom_fields">خانەی تایبەت</div>
+    <div id="customFieldsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+    <div class="row" style="gap:8px;margin-bottom:16px;">
+      <input type="text" id="newCustomFieldName" placeholder="ناوی خانەیەکی نوێ بنووسە" data-i18n-placeholder="ph_custom_field_name" style="flex:1;">
+      <button class="btn ghost small" onclick="addCustomFieldInModal()" data-i18n="btn_add_field">+ زیادکردن</button>
+    </div>
+    <div class="row" style="gap:8px;">
+      <button class="btn ghost" style="flex:1;" onclick="closeFieldsModal()" data-i18n="btn_cancel">پاشگەزبوونەوە</button>
+      <button class="btn blue" style="flex:1;" onclick="saveSupplierFields()" data-i18n="btn_save">پاشەکەوتکردن</button>
+    </div>
+  </div>
+</div>
+
 <div class="modalBg" id="scannerModal">
   <div class="modalCard" style="max-width:420px;">
     <h3 data-i18n="scanner_title">سکانکردنی بارکۆد</h3>
@@ -803,6 +884,14 @@ function startListeners(){
     returns = snap.docs.map(d=>d.data());
     safeRenderAll();
   }, err=>{ console.error(err); });
+  db.collection('suppliers').onSnapshot(snap=>{
+    suppliers = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
+  db.collection('purchaseInvoices').onSnapshot(snap=>{
+    purchaseInvoices = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
 }
 function safeRenderAll(){
   if(document.getElementById('app').style.display==='none') return;
@@ -811,12 +900,19 @@ function safeRenderAll(){
   try{ renderDebtList(); }catch(e){}
   try{ renderReport(); }catch(e){}
   try{ renderReturnsList(); }catch(e){}
+  try{ if(currentView==='purchases' && document.getElementById('purchSuppliersView').style.display!=='none') { renderSupplierList(); renderPurchaseSearch(); } }catch(e){}
+  try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') renderInvoiceList(); }catch(e){}
 }
 
 let settings = defaultSettings();
 let medicines = [];
 let sales = [];
 let returns = [];
+let suppliers = [];
+let purchaseInvoices = [];
+let currentSupplierId = null;
+let editingInvoiceId = null;
+let invoiceFormItems = [];
 let currentRole = null; // 'manager' | 'employee'
 let currentView = 'warehouse';
 let currentLang = localStorage.getItem('phx_lang') || 'ku';
@@ -862,6 +958,21 @@ const translations = {
     label_med_name:'ناوی دەرمان *', btn_generate:'دروستکردن', label_med_type:'جۆری دەرمان',
     label_pack_size:'دانە لە هەر کارتۆنێک (١ ئەگەر کارتۆن نییە)',
     label_med_company:'ناوی کۆمپانیا', th_company:'کۆمپانیا',
+    nav_purchases:'قائیمە', ph_supplier_name:'ناوی کۆگا/کۆمپانیا (نموونە: نشمیل)',
+    btn_add_supplier:'+ زیادکردنی کۆگا', btn_back:'گەڕانەوە', btn_add_invoice:'+ زیادکردنی قایمە',
+    label_invoice_number:'ژمارەی قایمە', label_invoice_date:'بەروار', label_invoice_items:'مادەکان',
+    th_item_name:'ناوی مادە', th_free:'فری', th_batch_number:'باج نەمبەر',
+    btn_add_row:'+ زیادکردنی ڕیز', btn_save_invoice:'پاشەکەوتکردنی قایمە',
+    empty_no_suppliers:'هیچ کۆگایەک زیاد نەکراوە', empty_no_invoices:'هیچ قایمەیەک تۆمار نەکراوە',
+    label_invoices_count:'قایمە', label_items_count:'مادە',
+    alert_enter_supplier_name:'تکایە ناوی کۆگا بنووسە', confirm_delete_supplier:'دڵنیای لە سڕینەوەی ئەم کۆگایە؟',
+    alert_enter_invoice_number:'تکایە ژمارەی قایمە بنووسە', alert_invoice_no_items:'تکایە لانیکەم یەک مادە زیاد بکە',
+    label_no_date:'بەبێ بەروار',
+    btn_configure_fields:'⚙️ خانەکان', fields_modal_title:'خانەکانی قایمە',
+    fields_modal_hint:'دیاری بکە قایمەکانی ئەم کۆگایە کام خانەکانی پێویستە. ناوی مادە هەمیشە پیشان دەدرێت.',
+    label_custom_fields:'خانەی تایبەت', ph_custom_field_name:'ناوی خانەیەکی نوێ بنووسە', btn_add_field:'+ زیادکردن',
+    label_purchase_search:'گەڕان بە ناوی مادە، بارکۆد یان ژمارەی قایمە (لە هەموو کۆگاکان)',
+    ph_purchase_search:'گەڕان...', empty_no_purchase_matches:'هیچ ئەنجامێک نەدۆزرایەوە',
     label_total_units:'کۆی گشتی لە کۆگا (دانە/شریت)', label_unit_name:'ناوی یەکە (دانە/شریت/پاکەت)',
     btn_delete:'سڕینەوە', btn_cancel:'پاشگەزبوونەوە',
     receipt_title:'وەسڵ ئامادەیە', btn_close:'داخستن', btn_print:'🖨️ چاپکردن',
@@ -943,6 +1054,21 @@ const translations = {
     label_med_name:'Medicine Name *', btn_generate:'Generate', label_med_type:'Medicine Type',
     label_pack_size:'Units per carton (1 if no carton)',
     label_med_company:'Company Name', th_company:'Company',
+    nav_purchases:'Purchases', ph_supplier_name:'Supplier/Company name (e.g. Nishmil)',
+    btn_add_supplier:'+ Add Supplier', btn_back:'Back', btn_add_invoice:'+ Add Invoice',
+    label_invoice_number:'Invoice Number', label_invoice_date:'Date', label_invoice_items:'Items',
+    th_item_name:'Item Name', th_free:'Free', th_batch_number:'Batch Number',
+    btn_add_row:'+ Add Row', btn_save_invoice:'Save Invoice',
+    empty_no_suppliers:'No suppliers added yet', empty_no_invoices:'No invoices recorded yet',
+    label_invoices_count:'invoices', label_items_count:'items',
+    alert_enter_supplier_name:'Please enter the supplier name', confirm_delete_supplier:'Are you sure you want to delete this supplier?',
+    alert_enter_invoice_number:'Please enter the invoice number', alert_invoice_no_items:'Please add at least one item',
+    label_no_date:'No date',
+    btn_configure_fields:'⚙️ Fields', fields_modal_title:'Invoice Fields',
+    fields_modal_hint:"Choose which fields this supplier's invoices need. Item name is always shown.",
+    label_custom_fields:'Custom Fields', ph_custom_field_name:'Type a new field name', btn_add_field:'+ Add',
+    label_purchase_search:'Search by item name, barcode, or invoice number (across all suppliers)',
+    ph_purchase_search:'Search...', empty_no_purchase_matches:'No matches found',
     label_total_units:'Total Stock (units)', label_unit_name:'Unit Name (piece/strip/pack)',
     btn_delete:'Delete', btn_cancel:'Cancel',
     receipt_title:'Receipt Ready', btn_close:'Close', btn_print:'🖨️ Print',
@@ -1077,7 +1203,7 @@ function applyPermissions(){
 /* ===================== NAV ===================== */
 const VIEW_TITLE_KEY = {
   warehouse:'nav_warehouse', sales:'nav_sales', returns:'nav_returns', debt:'nav_debt',
-  reports:'nav_reports', expiry:'nav_expiry', settings:'nav_settings'
+  reports:'nav_reports', expiry:'nav_expiry', purchases:'nav_purchases', settings:'nav_settings'
 };
 function switchView(name){
   if(currentRole==='employee' && !getAllowedEmployeeSections().includes(name)) return;
@@ -1097,6 +1223,14 @@ function switchView(name){
     renderReport();
   }
   if(name==='expiry') renderExpiry();
+  if(name==='purchases'){
+    currentSupplierId=null;
+    const ps = document.getElementById('purchaseSearch');
+    if(ps) ps.value='';
+    showPurchSubview('suppliers');
+    renderPurchaseSearch();
+    renderSupplierList();
+  }
   if(name==='settings') fillSettingsForm();
 }
 function toggleSidebar(){
@@ -1703,6 +1837,304 @@ function renderReturnsList(){
   tbody.innerHTML = out;
 }
 
+/* ===================== PURCHASES (قائیمە) ===================== */
+function escapeAttr(str){ return String(str==null?'':str).replace(/"/g,'&quot;'); }
+function showPurchSubview(name){
+  document.getElementById('purchSuppliersView').style.display = name==='suppliers' ? 'block' : 'none';
+  document.getElementById('purchInvoicesView').style.display = name==='invoices' ? 'block' : 'none';
+  document.getElementById('purchFormView').style.display = name==='form' ? 'block' : 'none';
+}
+function renderPurchaseSearch(){
+  const q = document.getElementById('purchaseSearch').value.trim().toLowerCase();
+  const addCard = document.getElementById('addSupplierCard');
+  const listBox = document.getElementById('supplierListBox');
+  const resultsBox = document.getElementById('purchaseSearchResults');
+  if(!q){
+    resultsBox.style.display='none';
+    resultsBox.innerHTML='';
+    if(addCard) addCard.style.display='block';
+    if(listBox) listBox.style.display='block';
+    return;
+  }
+  if(addCard) addCard.style.display='none';
+  if(listBox) listBox.style.display='none';
+  resultsBox.style.display='block';
+
+  let matches = [];
+  purchaseInvoices.forEach(inv=>{
+    const invNumMatch = (inv.invoiceNumber||'').toLowerCase().includes(q);
+    (inv.items||[]).forEach(it=>{
+      const nameMatch = (it.name||'').toLowerCase().includes(q);
+      const barcodeMatch = (it.barcode||'').toLowerCase().includes(q);
+      if(invNumMatch || nameMatch || barcodeMatch){
+        matches.push({inv, item:it});
+      }
+    });
+  });
+  if(matches.length===0){
+    resultsBox.innerHTML = '<div class="card"><div class="empty">'+t('empty_no_purchase_matches')+'</div></div>';
+    return;
+  }
+  matches.sort((a,b)=> (b.inv.date||'').localeCompare(a.inv.date||''));
+  resultsBox.innerHTML = matches.map(m=>{
+    const extra = [];
+    if(m.item.price!=null && m.item.price!=='') extra.push(t('th_price')+': '+fmt(m.item.price));
+    if(m.item.qty!=null && m.item.qty!=='') extra.push(t('th_qty')+': '+m.item.qty);
+    if(m.item.expiry) extra.push(t('th_expiry')+': '+m.item.expiry);
+    if(m.item.batchNumber) extra.push(t('th_batch_number')+': '+escapeHtml(m.item.batchNumber));
+    return `<div class="card" style="cursor:pointer;" onclick="openSupplier('${m.inv.supplierId}');openEditInvoice('${m.inv.id}');">
+      <div class="row between">
+        <b>${escapeHtml(m.item.name)}</b>
+        <span style="font-size:12px;color:var(--muted);">${m.inv.date||''}</span>
+      </div>
+      <div style="font-size:12.5px;margin-top:6px;">
+        🏢 ${escapeHtml(m.inv.supplierName||'—')} — ${t('label_invoice_number')}: ${escapeHtml(m.inv.invoiceNumber||'—')}
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">${extra.join(' · ')}</div>
+    </div>`;
+  }).join('');
+}
+function renderSupplierList(){
+  const box = document.getElementById('supplierListBox');
+  if(!box) return;
+  if(suppliers.length===0){
+    box.innerHTML = '<div class="card"><div class="empty">'+t('empty_no_suppliers')+'</div></div>';
+    return;
+  }
+  box.innerHTML = suppliers.map(s=>{
+    const count = purchaseInvoices.filter(inv=>inv.supplierId===s.id).length;
+    return `<div class="card" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;" onclick="openSupplier('${s.id}')">
+      <div><b>${escapeHtml(s.name)}</b><div style="font-size:12px;color:var(--muted);margin-top:4px;">${count} ${t('label_invoices_count')}</div></div>
+      <button class="btn danger small" onclick="event.stopPropagation();deleteSupplier('${s.id}')">${t('btn_delete')}</button>
+    </div>`;
+  }).join('');
+}
+const INVOICE_FIELD_DEFS = [
+  {key:'expiry', label:'th_expiry', type:'date'},
+  {key:'price', label:'th_price', type:'number'},
+  {key:'qty', label:'th_qty', type:'number'},
+  {key:'free', label:'th_free', type:'number'},
+  {key:'batchNumber', label:'th_batch_number', type:'text'},
+  {key:'barcode', label:'th_barcode', type:'text'},
+];
+function defaultSupplierFields(){
+  return {expiry:true, price:true, qty:true, free:true, batchNumber:true, barcode:false};
+}
+function getSupplierFields(supplier){
+  return Object.assign(defaultSupplierFields(), (supplier && supplier.fields) || {});
+}
+function getActiveFieldDefs(){
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  const fields = getSupplierFields(supplier);
+  const preset = INVOICE_FIELD_DEFS.filter(f => fields[f.key]);
+  const custom = ((supplier && supplier.customFields) || []).map(cf=>({key:cf.key, label:cf.label, type:'text', custom:true}));
+  return preset.concat(custom);
+}
+let editingCustomFields = [];
+function renderCustomFieldsInModal(){
+  const box = document.getElementById('customFieldsList');
+  if(editingCustomFields.length===0){
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = editingCustomFields.map(f=>`
+    <div class="permRow">
+      <label style="flex:1;">${escapeHtml(f.label)}</label>
+      <button type="button" class="btn danger small" onclick="removeCustomFieldInModal('${f.key}')">✕</button>
+    </div>
+  `).join('');
+}
+function addCustomFieldInModal(){
+  const input = document.getElementById('newCustomFieldName');
+  const name = input.value.trim();
+  if(!name) return;
+  editingCustomFields.push({key:'custom_'+uid(), label:name});
+  input.value='';
+  renderCustomFieldsInModal();
+}
+function removeCustomFieldInModal(key){
+  editingCustomFields = editingCustomFields.filter(f=>f.key!==key);
+  renderCustomFieldsInModal();
+}
+function openFieldsModal(){
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  const fields = getSupplierFields(supplier);
+  editingCustomFields = ((supplier && supplier.customFields) || []).map(f=>({...f}));
+  const box = document.getElementById('fieldsCheckList');
+  box.innerHTML = INVOICE_FIELD_DEFS.map(f=>`
+    <div class="permRow">
+      <input type="checkbox" id="fchk_${f.key}" ${fields[f.key]?'checked':''}>
+      <label for="fchk_${f.key}">${t(f.label)}</label>
+    </div>
+  `).join('');
+  renderCustomFieldsInModal();
+  document.getElementById('fieldsModal').classList.add('show');
+}
+function closeFieldsModal(){ document.getElementById('fieldsModal').classList.remove('show'); }
+async function saveSupplierFields(){
+  const fields = {};
+  INVOICE_FIELD_DEFS.forEach(f=>{
+    const el = document.getElementById('fchk_'+f.key);
+    fields[f.key] = el ? el.checked : false;
+  });
+  try{
+    await db.collection('suppliers').doc(currentSupplierId).update({fields, customFields: editingCustomFields});
+  }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+  closeFieldsModal();
+}
+async function addSupplier(){
+  const input = document.getElementById('newSupplierName');
+  const name = input.value.trim();
+  if(!name){ alert(t('alert_enter_supplier_name')); return; }
+  const id = uid();
+  try{
+    await db.collection('suppliers').doc(id).set({id, name, fields: defaultSupplierFields()});
+    input.value='';
+  }catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
+}
+async function deleteSupplier(id){
+  if(!confirm(t('confirm_delete_supplier'))) return;
+  try{ await db.collection('suppliers').doc(id).delete(); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
+}
+function openSupplier(id){
+  currentSupplierId = id;
+  showPurchSubview('invoices');
+  renderInvoiceList();
+}
+function backToSuppliers(){
+  currentSupplierId = null;
+  showPurchSubview('suppliers');
+  renderSupplierList();
+}
+function renderInvoiceList(){
+  const titleEl = document.getElementById('invoicesSupplierTitle');
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  if(titleEl) titleEl.textContent = supplier ? supplier.name : '';
+  const box = document.getElementById('invoiceListBox');
+  if(!box) return;
+  const list = purchaseInvoices.filter(inv=>inv.supplierId===currentSupplierId);
+  if(list.length===0){
+    box.innerHTML = '<div class="card"><div class="empty">'+t('empty_no_invoices')+'</div></div>';
+    return;
+  }
+  const grouped = {};
+  list.forEach(inv=>{
+    const d = inv.date || t('label_no_date');
+    (grouped[d] = grouped[d] || []).push(inv);
+  });
+  const dates = Object.keys(grouped).sort((a,b)=> b.localeCompare(a));
+  let html = '';
+  dates.forEach(d=>{
+    html += `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:16px 4px 8px;display:flex;align-items:center;gap:6px;">📅 ${escapeHtml(d)}</div>`;
+    grouped[d].forEach(inv=>{
+      const itemCount = (inv.items||[]).length;
+      html += `<div class="card" style="cursor:pointer;margin-bottom:10px;" onclick="openEditInvoice('${inv.id}')">
+        <div class="row between">
+          <b>${t('label_invoice_number')}: ${escapeHtml(inv.invoiceNumber||'—')}</b>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:6px;">${itemCount} ${t('label_items_count')}</div>
+      </div>`;
+    });
+  });
+  box.innerHTML = html;
+}
+function backToInvoiceList(){
+  showPurchSubview('invoices');
+  renderInvoiceList();
+}
+function blankInvoiceRow(){
+  return {name:'', expiry:'', price:'', qty:'', free:'', batchNumber:'', barcode:''};
+}
+function openNewInvoice(){
+  editingInvoiceId = null;
+  invoiceFormItems = [blankInvoiceRow()];
+  document.getElementById('invoiceNumber').value = '';
+  document.getElementById('invoiceDate').value = todayStr();
+  renderInvoiceRows();
+  showPurchSubview('form');
+}
+function openEditInvoice(id){
+  const inv = purchaseInvoices.find(x=>x.id===id);
+  if(!inv) return;
+  editingInvoiceId = id;
+  invoiceFormItems = (inv.items||[]).map(r=>{
+    const row = blankInvoiceRow();
+    Object.keys(r).forEach(k=>{ row[k] = r[k]!=null ? r[k] : ''; });
+    return row;
+  });
+  if(invoiceFormItems.length===0) invoiceFormItems=[blankInvoiceRow()];
+  document.getElementById('invoiceNumber').value = inv.invoiceNumber || '';
+  document.getElementById('invoiceDate').value = inv.date || todayStr();
+  renderInvoiceRows();
+  showPurchSubview('form');
+}
+function renderInvoiceRows(){
+  const theadRow = document.getElementById('invoiceItemsHead');
+  const tbody = document.getElementById('invoiceItemsBody');
+  if(!tbody || !theadRow) return;
+  const activeFields = getActiveFieldDefs();
+  theadRow.innerHTML = `<th>${t('th_item_name')}</th>` +
+    activeFields.map(f=>`<th>${f.custom ? escapeHtml(f.label) : t(f.label)}</th>`).join('') +
+    `<th>${t('th_action')}</th>`;
+  tbody.innerHTML = invoiceFormItems.map((row,i)=>{
+    const cells = activeFields.map(f=>{
+      const widthStyle = f.type==='text' ? 'style="width:110px;"' : (f.type==='number' ? 'style="width:85px;"' : '');
+      const extraAttrs = f.type==='number' ? 'min="0"' : '';
+      return `<td><input type="${f.type}" ${extraAttrs} value="${escapeAttr(row[f.key])}" oninput="updateInvoiceRow(${i},'${f.key}',this.value)" ${widthStyle}></td>`;
+    }).join('');
+    return `<tr>
+      <td><input type="text" value="${escapeAttr(row.name)}" oninput="updateInvoiceRow(${i},'name',this.value)" style="min-width:140px;"></td>
+      ${cells}
+      <td><button class="btn danger small" onclick="removeInvoiceRow(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+function updateInvoiceRow(i, key, val){
+  if(invoiceFormItems[i]) invoiceFormItems[i][key] = val;
+}
+function addInvoiceRow(){
+  invoiceFormItems.push(blankInvoiceRow());
+  renderInvoiceRows();
+}
+function removeInvoiceRow(i){
+  invoiceFormItems.splice(i,1);
+  if(invoiceFormItems.length===0) invoiceFormItems=[blankInvoiceRow()];
+  renderInvoiceRows();
+}
+async function saveInvoice(){
+  const invoiceNumber = document.getElementById('invoiceNumber').value.trim();
+  const date = document.getElementById('invoiceDate').value || todayStr();
+  if(!invoiceNumber){ alert(t('alert_enter_invoice_number')); return; }
+  const activeFields = getActiveFieldDefs();
+  const cleanItems = invoiceFormItems
+    .filter(r => r.name && r.name.trim())
+    .map(r => {
+      const obj = {name: r.name.trim()};
+      activeFields.forEach(f=>{
+        obj[f.key] = f.type==='number' ? (parseFloat(r[f.key])||0) : (r[f.key]||'').toString().trim();
+      });
+      return obj;
+    });
+  if(cleanItems.length===0){ alert(t('alert_invoice_no_items')); return; }
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  const record = {
+    id: editingInvoiceId || uid(),
+    supplierId: currentSupplierId,
+    supplierName: supplier ? supplier.name : '',
+    invoiceNumber,
+    date,
+    items: cleanItems
+  };
+  try{
+    await db.collection('purchaseInvoices').doc(record.id).set(record);
+  }catch(e){
+    alert(t('alert_generic_error_prefix')+e.message);
+    return;
+  }
+  backToInvoiceList();
+}
+
 /* ===================== DEBT VIEW ===================== */
 function renderDebtList(){
   const q = (document.getElementById('debtSearch').value||'').trim().toLowerCase();
@@ -1874,6 +2306,7 @@ const PERM_SECTIONS = [
   {key:'debt', label:'nav_debt'},
   {key:'reports', label:'nav_reports'},
   {key:'expiry', label:'nav_expiry'},
+  {key:'purchases', label:'nav_purchases'},
   {key:'settings', label:'nav_settings'},
 ];
 function renderPermsList(){
