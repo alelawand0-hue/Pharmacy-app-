@@ -388,6 +388,7 @@
       <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> <span data-i18n="nav_reports">راپۆرت</span></button>
       <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> <span data-i18n="nav_expiry">ئێکسپایەر</span></button>
       <button class="navBtn" data-view="purchases" onclick="switchView('purchases')"><span class="ic">📥</span> <span data-i18n="nav_purchases">قائیمە</span></button>
+      <button class="navBtn" data-view="expenses" onclick="switchView('expenses')"><span class="ic">💸</span> <span data-i18n="nav_expenses">خەرجی</span></button>
       <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> <span data-i18n="nav_settings">ڕێکخستن</span></button>
       <div class="spacer"></div>
       <button class="logoutBtn" onclick="logout()">🚪 <span data-i18n="btn_logout">دەرچوون</span></button>
@@ -585,6 +586,15 @@
             </table>
           </div>
         </div>
+        <div class="card">
+          <div class="cardTitle" data-i18n="today_expenses_title">خەرجییەکانی ئەم ڕۆژە</div>
+          <div class="tblWrap">
+            <table>
+              <thead><tr><th data-i18n="label_expense_desc">ناونیشان</th><th data-i18n="th_price">بڕی پارە</th></tr></thead>
+              <tbody id="reportExpensesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- ============ EXPIRY ============ -->
@@ -626,11 +636,62 @@
               <div class="cardTitle" id="invoicesSupplierTitle" style="margin:0;"></div>
               <div class="row" style="gap:8px;">
                 <button class="btn ghost small" onclick="openFieldsModal()" data-i18n="btn_configure_fields">⚙️ خانەکان</button>
-                <button class="btn blue small" onclick="openNewInvoice()" data-i18n="btn_add_invoice">+ زیادکردنی قایمە</button>
+              </div>
+            </div>
+            <div class="row" style="gap:8px;margin-top:14px;">
+              <button class="btn" id="tabInvoicesBtn" onclick="setSupplierTab('invoices')" style="flex:1;" data-i18n="tab_invoices">قایمەکان</button>
+              <button class="btn" id="tabReturnsBtn" onclick="setSupplierTab('returns')" style="flex:1;" data-i18n="tab_supplier_returns">گەڕاندنەوەکان</button>
+            </div>
+          </div>
+
+          <div id="supplierInvoicesTabBody">
+            <div class="card">
+              <button class="btn blue" style="width:100%;" onclick="openNewInvoice()" data-i18n="btn_add_invoice">+ زیادکردنی قایمە</button>
+            </div>
+            <div id="invoiceListBox"></div>
+          </div>
+
+          <div id="supplierReturnsTabBody" style="display:none;">
+            <div class="card">
+              <button class="btn blue" style="width:100%;" onclick="openNewSupplierReturn()" data-i18n="btn_add_supplier_return">+ زیادکردنی گەڕاندنەوە</button>
+            </div>
+            <div id="supplierReturnListBox"></div>
+          </div>
+        </div>
+
+        <div id="purchReturnFormView" style="display:none;">
+          <div class="card">
+            <button class="btn ghost small" onclick="backToSupplierReturnsList()">→ <span data-i18n="btn_back">گەڕانەوە</span></button>
+            <div class="grid2" style="margin-top:12px;">
+              <div class="field">
+                <label class="lbl" data-i18n="label_return_ref">ژمارە/تێبینی (ئارەزوومەندانە)</label>
+                <input type="text" id="supplierReturnRef">
+              </div>
+              <div class="field">
+                <label class="lbl" data-i18n="label_invoice_date">بەروار</label>
+                <input type="date" id="supplierReturnDate">
               </div>
             </div>
           </div>
-          <div id="invoiceListBox"></div>
+          <div class="card">
+            <div class="cardTitle" data-i18n="label_invoice_items">مادەکان</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;" data-i18n="hint_supplier_return_stock">ئەگەر بارکۆدی دەرمانەکە بنووسیت و لەگەڵ کۆگا یەکبگرێتەوە (✅)، بڕەکە خۆکار لە کۆگای سەرەکی کەم دەکرێتەوە کاتێک یەکەم جار پاشەکەوتی دەکەیت.</div>
+            <div class="tblWrap" style="max-height:none;">
+              <table>
+                <thead><tr>
+                  <th data-i18n="th_barcode">بارکۆد</th>
+                  <th data-i18n="th_item_name">ناوی مادە</th>
+                  <th data-i18n="th_qty">ژمارە</th>
+                  <th data-i18n="th_price">نرخ</th>
+                  <th data-i18n="label_return_reason">هۆکار</th>
+                  <th data-i18n="th_action">کردار</th>
+                </tr></thead>
+                <tbody id="supplierReturnItemsBody"></tbody>
+              </table>
+            </div>
+            <button class="btn ghost small" style="margin-top:10px;" onclick="addSupplierReturnRow()" data-i18n="btn_add_row">+ زیادکردنی ڕیز</button>
+          </div>
+          <button class="btn blue" onclick="saveSupplierReturn()" data-i18n="btn_save_supplier_return">پاشەکەوتکردنی گەڕاندنەوە</button>
         </div>
 
         <div id="purchFormView" style="display:none;">
@@ -658,6 +719,30 @@
             <button class="btn ghost small" style="margin-top:10px;" onclick="addInvoiceRow()" data-i18n="btn_add_row">+ زیادکردنی ڕیز</button>
           </div>
           <button class="btn blue" onclick="saveInvoice()" data-i18n="btn_save_invoice">پاشەکەوتکردنی قایمە</button>
+        </div>
+      </section>
+
+      <!-- ============ EXPENSES (خەرجی) ============ -->
+      <section id="view-expenses" style="display:none;">
+        <div class="topbar"><h2>💸 <span data-i18n="nav_expenses">خەرجی</span></h2></div>
+        <div class="card">
+          <div class="grid3">
+            <div class="field"><label class="lbl" data-i18n="label_expense_desc">ناونیشانی خەرجی</label><input type="text" id="expenseDesc"></div>
+            <div class="field"><label class="lbl" data-i18n="label_expense_amount">بڕی پارە</label><input type="number" id="expenseAmount" min="0"></div>
+            <div class="field"><label class="lbl" data-i18n="label_expense_date">بەروار</label><input type="date" id="expenseDate"></div>
+          </div>
+          <button class="btn blue" onclick="addExpense()" data-i18n="btn_add_expense">+ زیادکردنی خەرجی</button>
+        </div>
+        <div class="kpis" id="expenseKpis"></div>
+        <div class="card">
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="label_expense_date">بەروار</th><th data-i18n="label_expense_desc">ناونیشان</th><th data-i18n="th_price">بڕی پارە</th><th data-i18n="th_action">کردار</th>
+              </tr></thead>
+              <tbody id="expenseTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -892,6 +977,14 @@ function startListeners(){
     purchaseInvoices = snap.docs.map(d=>d.data());
     safeRenderAll();
   }, err=>{ console.error(err); });
+  db.collection('expenses').onSnapshot(snap=>{
+    expenses = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
+  db.collection('supplierReturns').onSnapshot(snap=>{
+    supplierReturns = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
 }
 function safeRenderAll(){
   if(document.getElementById('app').style.display==='none') return;
@@ -900,8 +993,9 @@ function safeRenderAll(){
   try{ renderDebtList(); }catch(e){}
   try{ renderReport(); }catch(e){}
   try{ renderReturnsList(); }catch(e){}
+  try{ renderExpenses(); }catch(e){}
   try{ if(currentView==='purchases' && document.getElementById('purchSuppliersView').style.display!=='none') { renderSupplierList(); renderPurchaseSearch(); } }catch(e){}
-  try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') renderInvoiceList(); }catch(e){}
+  try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') { renderInvoiceList(); renderSupplierReturnList(); } }catch(e){}
 }
 
 let settings = defaultSettings();
@@ -910,9 +1004,14 @@ let sales = [];
 let returns = [];
 let suppliers = [];
 let purchaseInvoices = [];
+let expenses = [];
 let currentSupplierId = null;
 let editingInvoiceId = null;
 let invoiceFormItems = [];
+let supplierReturns = [];
+let editingSupplierReturnId = null;
+let supplierReturnFormItems = [];
+let currentSupplierTab = 'invoices';
 let currentRole = null; // 'manager' | 'employee'
 let currentView = 'warehouse';
 let currentLang = localStorage.getItem('phx_lang') || 'ku';
@@ -973,6 +1072,18 @@ const translations = {
     label_custom_fields:'خانەی تایبەت', ph_custom_field_name:'ناوی خانەیەکی نوێ بنووسە', btn_add_field:'+ زیادکردن',
     label_purchase_search:'گەڕان بە ناوی مادە، بارکۆد یان ژمارەی قایمە (لە هەموو کۆگاکان)',
     ph_purchase_search:'گەڕان...', empty_no_purchase_matches:'هیچ ئەنجامێک نەدۆزرایەوە',
+    nav_expenses:'خەرجی', label_expense_desc:'جۆری خەرجی', label_expense_amount:'بڕی پارە',
+    label_expense_date:'بەروار', btn_add_expense:'+ زیادکردنی خەرجی',
+    kpi_total_expenses:'کۆی خەرجی', empty_no_expenses:'هیچ خەرجییەک تۆمار نەکراوە',
+    empty_no_expenses_day:'هیچ خەرجییەک لەم ڕۆژە تۆمار نەکراوە',
+    alert_enter_expense_desc:'تکایە جۆری خەرجی بنووسە', alert_invalid_amount:'بڕی پارە دروست نییە',
+    confirm_delete_expense:'دڵنیای لە سڕینەوەی ئەم خەرجییە؟', today_expenses_title:'خەرجییەکانی ئەم ڕۆژە',
+    tab_invoices:'قایمەکان', tab_supplier_returns:'گەڕاندنەوەکان', btn_add_supplier_return:'+ زیادکردنی گەڕاندنەوە',
+    label_return_ref:'ژمارە/تێبینی (ئارەزوومەندانە)', label_return_reason:'هۆکار',
+    btn_save_supplier_return:'پاشەکەوتکردنی گەڕاندنەوە', empty_no_supplier_returns:'هیچ گەڕاندنەوەیەک بۆ ئەم کۆگایە تۆمار نەکراوە',
+    hint_supplier_return_stock:'ئەگەر بارکۆدی دەرمانەکە بنووسیت و لەگەڵ کۆگا یەکبگرێتەوە (✅)، بڕەکە خۆکار لە کۆگای سەرەکی کەم دەکرێتەوە کاتێک یەکەم جار پاشەکەوتی دەکەیت.',
+    alert_supplier_return_unmatched_prefix:'گەڕاندنەوە تۆمار کرا، بەڵام بڕی کۆگا کەم نەکرایەوە بۆ ئەم مادانەی بارکۆدیان نەدۆزرایەوە: ',
+    label_current_stock:'بڕی مابوو لە کۆگا', label_barcode_not_found:'ئەم بارکۆدە لە کۆگادا نییە',
     label_total_units:'کۆی گشتی لە کۆگا (دانە/شریت)', label_unit_name:'ناوی یەکە (دانە/شریت/پاکەت)',
     btn_delete:'سڕینەوە', btn_cancel:'پاشگەزبوونەوە',
     receipt_title:'وەسڵ ئامادەیە', btn_close:'داخستن', btn_print:'🖨️ چاپکردن',
@@ -1069,6 +1180,18 @@ const translations = {
     label_custom_fields:'Custom Fields', ph_custom_field_name:'Type a new field name', btn_add_field:'+ Add',
     label_purchase_search:'Search by item name, barcode, or invoice number (across all suppliers)',
     ph_purchase_search:'Search...', empty_no_purchase_matches:'No matches found',
+    nav_expenses:'Expenses', label_expense_desc:'Expense Type', label_expense_amount:'Amount',
+    label_expense_date:'Date', btn_add_expense:'+ Add Expense',
+    kpi_total_expenses:'Total Expenses', empty_no_expenses:'No expenses recorded yet',
+    empty_no_expenses_day:'No expenses recorded for this day',
+    alert_enter_expense_desc:'Please enter the expense type', alert_invalid_amount:'Invalid amount',
+    confirm_delete_expense:'Are you sure you want to delete this expense?', today_expenses_title:"Today's Expenses",
+    tab_invoices:'Invoices', tab_supplier_returns:'Returns to Supplier', btn_add_supplier_return:'+ Add Return',
+    label_return_ref:'Reference/Note (optional)', label_return_reason:'Reason',
+    btn_save_supplier_return:'Save Return', empty_no_supplier_returns:'No returns recorded for this supplier yet',
+    hint_supplier_return_stock:"If you enter the medicine's barcode and it matches the warehouse (✅), the quantity will automatically be deducted from the main warehouse the first time you save.",
+    alert_supplier_return_unmatched_prefix:'Return saved, but warehouse stock was not adjusted for these items (barcode not matched): ',
+    label_current_stock:'Remaining Stock', label_barcode_not_found:'This barcode is not in the warehouse',
     label_total_units:'Total Stock (units)', label_unit_name:'Unit Name (piece/strip/pack)',
     btn_delete:'Delete', btn_cancel:'Cancel',
     receipt_title:'Receipt Ready', btn_close:'Close', btn_print:'🖨️ Print',
@@ -1203,7 +1326,7 @@ function applyPermissions(){
 /* ===================== NAV ===================== */
 const VIEW_TITLE_KEY = {
   warehouse:'nav_warehouse', sales:'nav_sales', returns:'nav_returns', debt:'nav_debt',
-  reports:'nav_reports', expiry:'nav_expiry', purchases:'nav_purchases', settings:'nav_settings'
+  reports:'nav_reports', expiry:'nav_expiry', purchases:'nav_purchases', expenses:'nav_expenses', settings:'nav_settings'
 };
 function switchView(name){
   if(currentRole==='employee' && !getAllowedEmployeeSections().includes(name)) return;
@@ -1230,6 +1353,11 @@ function switchView(name){
     showPurchSubview('suppliers');
     renderPurchaseSearch();
     renderSupplierList();
+  }
+  if(name==='expenses'){
+    const de = document.getElementById('expenseDate');
+    if(de && !de.value) de.value = todayStr();
+    renderExpenses();
   }
   if(name==='settings') fillSettingsForm();
 }
@@ -1843,6 +1971,18 @@ function showPurchSubview(name){
   document.getElementById('purchSuppliersView').style.display = name==='suppliers' ? 'block' : 'none';
   document.getElementById('purchInvoicesView').style.display = name==='invoices' ? 'block' : 'none';
   document.getElementById('purchFormView').style.display = name==='form' ? 'block' : 'none';
+  document.getElementById('purchReturnFormView').style.display = name==='returnform' ? 'block' : 'none';
+}
+function setSupplierTab(tab){
+  currentSupplierTab = tab;
+  document.getElementById('supplierInvoicesTabBody').style.display = tab==='invoices' ? 'block' : 'none';
+  document.getElementById('supplierReturnsTabBody').style.display = tab==='returns' ? 'block' : 'none';
+  const invBtn = document.getElementById('tabInvoicesBtn');
+  const retBtn = document.getElementById('tabReturnsBtn');
+  invBtn.className = 'btn ' + (tab==='invoices' ? 'blue' : 'ghost');
+  retBtn.className = 'btn ' + (tab==='returns' ? 'blue' : 'ghost');
+  if(tab==='invoices') renderInvoiceList();
+  else renderSupplierReturnList();
 }
 function renderPurchaseSearch(){
   const q = document.getElementById('purchaseSearch').value.trim().toLowerCase();
@@ -2000,7 +2140,7 @@ async function deleteSupplier(id){
 function openSupplier(id){
   currentSupplierId = id;
   showPurchSubview('invoices');
-  renderInvoiceList();
+  setSupplierTab('invoices');
 }
 function backToSuppliers(){
   currentSupplierId = null;
@@ -2135,6 +2275,160 @@ async function saveInvoice(){
   backToInvoiceList();
 }
 
+/* ===================== RETURNS TO SUPPLIER (گەڕاندنەوە بۆ کۆگا) ===================== */
+function renderSupplierReturnList(){
+  const box = document.getElementById('supplierReturnListBox');
+  if(!box) return;
+  const list = supplierReturns.filter(r=>r.supplierId===currentSupplierId);
+  if(list.length===0){
+    box.innerHTML = '<div class="card"><div class="empty">'+t('empty_no_supplier_returns')+'</div></div>';
+    return;
+  }
+  const grouped = {};
+  list.forEach(r=>{
+    const d = r.date || t('label_no_date');
+    (grouped[d] = grouped[d] || []).push(r);
+  });
+  const dates = Object.keys(grouped).sort((a,b)=> b.localeCompare(a));
+  let html = '';
+  dates.forEach(d=>{
+    html += `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:16px 4px 8px;">📅 ${escapeHtml(d)}</div>`;
+    grouped[d].forEach(r=>{
+      const itemCount = (r.items||[]).length;
+      const total = (r.items||[]).reduce((a,it)=>a+(parseFloat(it.qty)||0)*(parseFloat(it.price)||0),0);
+      html += `<div class="card" style="cursor:pointer;margin-bottom:10px;" onclick="openEditSupplierReturn('${r.id}')">
+        <div class="row between">
+          <b>${r.ref ? escapeHtml(r.ref) : t('nav_returns')}</b>
+          <span style="font-size:12px;color:var(--danger);font-weight:700;">${fmt(total)}</span>
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:6px;">${itemCount} ${t('label_items_count')}</div>
+      </div>`;
+    });
+  });
+  box.innerHTML = html;
+}
+function backToSupplierReturnsList(){
+  showPurchSubview('invoices');
+  setSupplierTab('returns');
+}
+function blankSupplierReturnRow(){
+  return {name:'', qty:'', price:'', reason:'', barcode:''};
+}
+function openNewSupplierReturn(){
+  editingSupplierReturnId = null;
+  supplierReturnFormItems = [blankSupplierReturnRow()];
+  document.getElementById('supplierReturnRef').value = '';
+  document.getElementById('supplierReturnDate').value = todayStr();
+  renderSupplierReturnRows();
+  showPurchSubview('returnform');
+}
+function openEditSupplierReturn(id){
+  const rec = supplierReturns.find(x=>x.id===id);
+  if(!rec) return;
+  editingSupplierReturnId = id;
+  supplierReturnFormItems = (rec.items||[]).map(r=>({...r}));
+  if(supplierReturnFormItems.length===0) supplierReturnFormItems=[blankSupplierReturnRow()];
+  document.getElementById('supplierReturnRef').value = rec.ref || '';
+  document.getElementById('supplierReturnDate').value = rec.date || todayStr();
+  renderSupplierReturnRows();
+  showPurchSubview('returnform');
+}
+function renderSupplierReturnRows(){
+  const tbody = document.getElementById('supplierReturnItemsBody');
+  if(!tbody) return;
+  tbody.innerHTML = supplierReturnFormItems.map((row,i)=>{
+    const med = row.barcode ? medicines.find(m=>m.barcode===row.barcode) : null;
+    let matchInfo = '';
+    if(row.barcode){
+      matchInfo = med
+        ? `<div style="font-size:11px;color:var(--ok);margin-top:3px;white-space:nowrap;">✅ ${t('label_current_stock')}: ${stockDisplay(med)}</div>`
+        : `<div style="font-size:11px;color:var(--warn);margin-top:3px;white-space:nowrap;">⚠️ ${t('label_barcode_not_found')}</div>`;
+    }
+    return `
+    <tr>
+      <td><input type="text" value="${escapeAttr(row.barcode)}" oninput="updateSupplierReturnRow(${i},'barcode',this.value)" onchange="onSupplierReturnBarcodeChange(${i})" style="width:110px;" placeholder="بارکۆد">${matchInfo}</td>
+      <td><input type="text" value="${escapeAttr(row.name)}" oninput="updateSupplierReturnRow(${i},'name',this.value)" style="min-width:140px;"></td>
+      <td><input type="number" min="0" value="${escapeAttr(row.qty)}" oninput="updateSupplierReturnRow(${i},'qty',this.value)" style="width:80px;"></td>
+      <td><input type="number" min="0" value="${escapeAttr(row.price)}" oninput="updateSupplierReturnRow(${i},'price',this.value)" style="width:90px;"></td>
+      <td><input type="text" value="${escapeAttr(row.reason)}" oninput="updateSupplierReturnRow(${i},'reason',this.value)" style="min-width:120px;"></td>
+      <td><button class="btn danger small" onclick="removeSupplierReturnRow(${i})">✕</button></td>
+    </tr>
+  `;
+  }).join('');
+}
+function onSupplierReturnBarcodeChange(i){
+  const row = supplierReturnFormItems[i];
+  if(!row) return;
+  const med = medicines.find(m=>m.barcode===row.barcode);
+  if(med){ row.name = med.name; }
+  renderSupplierReturnRows();
+}
+function updateSupplierReturnRow(i, key, val){
+  if(supplierReturnFormItems[i]) supplierReturnFormItems[i][key] = val;
+}
+function addSupplierReturnRow(){
+  supplierReturnFormItems.push(blankSupplierReturnRow());
+  renderSupplierReturnRows();
+}
+function removeSupplierReturnRow(i){
+  supplierReturnFormItems.splice(i,1);
+  if(supplierReturnFormItems.length===0) supplierReturnFormItems=[blankSupplierReturnRow()];
+  renderSupplierReturnRows();
+}
+async function saveSupplierReturn(){
+  const ref = document.getElementById('supplierReturnRef').value.trim();
+  const date = document.getElementById('supplierReturnDate').value || todayStr();
+  const cleanItems = supplierReturnFormItems
+    .filter(r => r.name && r.name.trim())
+    .map(r => ({
+      name: r.name.trim(),
+      qty: parseFloat(r.qty)||0,
+      price: parseFloat(r.price)||0,
+      reason: (r.reason||'').trim(),
+      barcode: (r.barcode||'').trim()
+    }));
+  if(cleanItems.length===0){ alert(t('alert_invoice_no_items')); return; }
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  const record = {
+    id: editingSupplierReturnId || uid(),
+    supplierId: currentSupplierId,
+    supplierName: supplier ? supplier.name : '',
+    ref, date,
+    items: cleanItems
+  };
+  const isNew = !editingSupplierReturnId;
+  const unmatched = [];
+  try{
+    if(isNew){
+      const matched = [];
+      cleanItems.forEach(it=>{
+        const med = it.barcode ? medicines.find(m=>m.barcode===it.barcode) : null;
+        if(med) matched.push({item:it, medId:med.id});
+        else unmatched.push(it.name);
+      });
+      await db.runTransaction(async (tx)=>{
+        const medRefs = matched.map(m=>db.collection('medicines').doc(m.medId));
+        const medDocs = await Promise.all(medRefs.map(r=>tx.get(r)));
+        const newTotals = medDocs.map((d,idx)=>{
+          const cur = d.exists ? (d.data().totalUnits||0) : 0;
+          return Math.max(0, cur - matched[idx].item.qty);
+        });
+        medRefs.forEach((r,idx)=> tx.update(r, {totalUnits:newTotals[idx]}));
+        tx.set(db.collection('supplierReturns').doc(record.id), record);
+      });
+    } else {
+      await db.collection('supplierReturns').doc(record.id).set(record);
+    }
+  }catch(e){
+    alert(t('alert_generic_error_prefix')+e.message);
+    return;
+  }
+  if(isNew && unmatched.length>0){
+    alert(t('alert_supplier_return_unmatched_prefix')+unmatched.join('، '));
+  }
+  backToSupplierReturnsList();
+}
+
 /* ===================== DEBT VIEW ===================== */
 function renderDebtList(){
   const q = (document.getElementById('debtSearch').value||'').trim().toLowerCase();
@@ -2171,6 +2465,49 @@ async function markDebtPaid(saleId){
   }
 }
 
+/* ===================== EXPENSES (خەرجی) ===================== */
+function renderExpenses(){
+  const tbody = document.getElementById('expenseTableBody');
+  if(!tbody) return;
+  const kpiBox = document.getElementById('expenseKpis');
+  const total = expenses.reduce((a,e)=>a+(e.amount||0),0);
+  if(kpiBox) kpiBox.innerHTML = `<div class="kpi"><span>${t('kpi_total_expenses')}</span><b>${fmt(total)}</b></div>`;
+  const sorted = [...expenses].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(sorted.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">'+t('empty_no_expenses')+'</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sorted.map(e=>`<tr>
+    <td>${e.date||''}</td>
+    <td>${escapeHtml(e.description||'')}</td>
+    <td>${fmt(e.amount||0)}</td>
+    <td><button class="btn danger small" onclick="deleteExpense('${e.id}')">${t('btn_delete')}</button></td>
+  </tr>`).join('');
+}
+async function addExpense(){
+  const descEl = document.getElementById('expenseDesc');
+  const amountEl = document.getElementById('expenseAmount');
+  const dateEl = document.getElementById('expenseDate');
+  const description = descEl.value.trim();
+  const amount = parseFloat(amountEl.value)||0;
+  const date = dateEl.value || todayStr();
+  if(!description){ alert(t('alert_enter_expense_desc')); return; }
+  if(amount<=0){ alert(t('alert_invalid_amount')); return; }
+  const id = uid();
+  try{
+    await db.collection('expenses').doc(id).set({id, description, amount, date});
+  }catch(e){
+    alert(t('alert_generic_error_prefix')+e.message);
+    return;
+  }
+  descEl.value=''; amountEl.value=''; dateEl.value = todayStr();
+}
+async function deleteExpense(id){
+  if(!confirm(t('confirm_delete_expense'))) return;
+  try{ await db.collection('expenses').doc(id).delete(); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
+}
+
 /* ===================== REPORTS VIEW ===================== */
 function renderReport(){
   const date = document.getElementById('reportDate').value || todayStr();
@@ -2180,12 +2517,15 @@ function renderReport(){
   const grand = cashTotal+debtTotal;
   const dayReturns = returns.filter(r=>r.date===date);
   const returnTotal = dayReturns.reduce((a,r)=>a+r.total,0);
+  const dayExpenses = expenses.filter(e=>e.date===date);
+  const expenseTotal = dayExpenses.reduce((a,e)=>a+(e.amount||0),0);
   document.getElementById('reportKpis').innerHTML = `
     <div class="kpi"><span>${t('kpi_grand_total')}</span><b>${fmt(grand)}</b></div>
     <div class="kpi"><span>${t('kpi_cash')}</span><b>${fmt(cashTotal)}</b></div>
     <div class="kpi"><span>${t('kpi_debt')}</span><b>${fmt(debtTotal)}</b></div>
     <div class="kpi"><span>${t('kpi_returned')}</span><b style="color:var(--danger);">${fmt(returnTotal)}</b></div>
-    <div class="kpi"><span>${t('kpi_net')}</span><b>${fmt(grand-returnTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_total_expenses')}</span><b style="color:var(--danger);">${fmt(expenseTotal)}</b></div>
+    <div class="kpi"><span>${t('kpi_net')}</span><b>${fmt(grand-returnTotal-expenseTotal)}</b></div>
     <div class="kpi"><span>${t('kpi_txn_count')}</span><b>${daySales.length}</b></div>
   `;
   const tbody = document.getElementById('reportTableBody');
@@ -2228,6 +2568,18 @@ function renderReport(){
       rtbody.innerHTML = rout;
     }
   }
+
+  const etbody = document.getElementById('reportExpensesTableBody');
+  if(etbody){
+    if(dayExpenses.length===0){
+      etbody.innerHTML = '<tr><td colspan="2" class="empty">'+t('empty_no_expenses_day')+'</td></tr>';
+    } else {
+      etbody.innerHTML = dayExpenses.map(e=>`<tr>
+        <td>${escapeHtml(e.description||'')}</td>
+        <td>${fmt(e.amount||0)}</td>
+      </tr>`).join('');
+    }
+  }
   renderSalesChart();
 }
 
@@ -2237,7 +2589,7 @@ function renderSalesChart(){
   const canvas = document.getElementById('salesChart');
   if(!section || section.style.display==='none' || !canvas || typeof Chart==='undefined') return;
   const labels = [];
-  const cashData = [], debtData = [], returnData = [];
+  const cashData = [], debtData = [], returnData = [], expenseData = [];
   for(let i=13;i>=0;i--){
     const d = new Date();
     d.setDate(d.getDate()-i);
@@ -2248,6 +2600,8 @@ function renderSalesChart(){
     debtData.push(daySales.filter(s=>s.type==='debt').reduce((a,s)=>a+s.total,0));
     const dayReturns = returns.filter(r=>r.date===ds);
     returnData.push(dayReturns.reduce((a,r)=>a+r.total,0));
+    const dayExp = expenses.filter(e=>e.date===ds);
+    expenseData.push(dayExp.reduce((a,e)=>a+(e.amount||0),0));
   }
   if(salesChartInstance) salesChartInstance.destroy();
   salesChartInstance = new Chart(canvas.getContext('2d'), {
@@ -2258,6 +2612,7 @@ function renderSalesChart(){
         { label: t('opt_cash'), data: cashData, backgroundColor: '#0f4c8c' },
         { label: t('opt_debt'), data: debtData, backgroundColor: '#3f8ee8' },
         { label: t('kpi_returned'), data: returnData, backgroundColor: '#c0392b' },
+        { label: t('nav_expenses'), data: expenseData, backgroundColor: '#d68910' },
       ]
     },
     options: {
@@ -2307,6 +2662,7 @@ const PERM_SECTIONS = [
   {key:'reports', label:'nav_reports'},
   {key:'expiry', label:'nav_expiry'},
   {key:'purchases', label:'nav_purchases'},
+  {key:'expenses', label:'nav_expenses'},
   {key:'settings', label:'nav_settings'},
 ];
 function renderPermsList(){
