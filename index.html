@@ -641,6 +641,7 @@
             <div class="row" style="gap:8px;margin-top:14px;">
               <button class="btn" id="tabInvoicesBtn" onclick="setSupplierTab('invoices')" style="flex:1;" data-i18n="tab_invoices">قایمەکان</button>
               <button class="btn" id="tabReturnsBtn" onclick="setSupplierTab('returns')" style="flex:1;" data-i18n="tab_supplier_returns">گەڕاندنەوەکان</button>
+              <button class="btn" id="tabPaymentsBtn" onclick="setSupplierTab('payments')" style="flex:1;" data-i18n="tab_payments">پارەدان</button>
             </div>
           </div>
 
@@ -656,6 +657,39 @@
               <button class="btn blue" style="width:100%;" onclick="openNewSupplierReturn()" data-i18n="btn_add_supplier_return">+ زیادکردنی گەڕاندنەوە</button>
             </div>
             <div id="supplierReturnListBox"></div>
+          </div>
+
+          <div id="supplierPaymentsTabBody" style="display:none;">
+            <div class="kpis" id="supplierPaymentKpis"></div>
+            <div class="card">
+              <div class="cardTitle" data-i18n="label_add_payment">پارەدانی نوێ</div>
+              <div class="grid2">
+                <div class="field">
+                  <label class="lbl" data-i18n="label_payment_amount">بڕی پارە</label>
+                  <input type="number" id="paymentAmount" min="0">
+                </div>
+                <div class="field">
+                  <label class="lbl" data-i18n="label_invoice_date">بەروار</label>
+                  <input type="date" id="paymentDate">
+                </div>
+              </div>
+              <div class="field">
+                <label class="lbl" data-i18n="label_payment_note">تێبینی (ئارەزوومەندانە)</label>
+                <input type="text" id="paymentNote">
+              </div>
+              <button class="btn blue" onclick="addSupplierPayment()" data-i18n="btn_add_payment">+ زیادکردنی پارەدان</button>
+            </div>
+            <div class="card">
+              <div class="cardTitle" data-i18n="label_payment_history">مێژووی پارەدانەکان</div>
+              <div class="tblWrap">
+                <table>
+                  <thead><tr>
+                    <th data-i18n="th_amount">بڕی پارە</th><th data-i18n="th_date_time">بەروار</th><th data-i18n="label_payment_note">تێبینی</th><th data-i18n="th_action">کردار</th>
+                  </tr></thead>
+                  <tbody id="supplierPaymentsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -985,6 +1019,10 @@ function startListeners(){
     supplierReturns = snap.docs.map(d=>d.data());
     safeRenderAll();
   }, err=>{ console.error(err); });
+  db.collection('supplierPayments').onSnapshot(snap=>{
+    supplierPayments = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
 }
 function safeRenderAll(){
   if(document.getElementById('app').style.display==='none') return;
@@ -995,7 +1033,7 @@ function safeRenderAll(){
   try{ renderReturnsList(); }catch(e){}
   try{ renderExpenses(); }catch(e){}
   try{ if(currentView==='purchases' && document.getElementById('purchSuppliersView').style.display!=='none') { renderSupplierList(); renderPurchaseSearch(); } }catch(e){}
-  try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') { renderInvoiceList(); renderSupplierReturnList(); } }catch(e){}
+  try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') { renderInvoiceList(); renderSupplierReturnList(); renderSupplierPayments(); } }catch(e){}
 }
 
 let settings = defaultSettings();
@@ -1009,6 +1047,7 @@ let currentSupplierId = null;
 let editingInvoiceId = null;
 let invoiceFormItems = [];
 let supplierReturns = [];
+let supplierPayments = [];
 let editingSupplierReturnId = null;
 let supplierReturnFormItems = [];
 let currentSupplierTab = 'invoices';
@@ -1078,6 +1117,11 @@ const translations = {
     empty_no_expenses_day:'هیچ خەرجییەک لەم ڕۆژە تۆمار نەکراوە',
     alert_enter_expense_desc:'تکایە جۆری خەرجی بنووسە', alert_invalid_amount:'بڕی پارە دروست نییە',
     confirm_delete_expense:'دڵنیای لە سڕینەوەی ئەم خەرجییە؟', today_expenses_title:'خەرجییەکانی ئەم ڕۆژە',
+    tab_payments:'پارەدان', label_add_payment:'پارەدانی نوێ', label_payment_amount:'بڕی پارە',
+    label_payment_note:'تێبینی (ئارەزوومەندانە)', btn_add_payment:'+ زیادکردنی پارەدان',
+    label_payment_history:'مێژووی پارەدانەکان', th_amount:'بڕی پارە',
+    kpi_total_purchased:'کۆی گشتی کڕین', kpi_total_paid:'کۆی پارەدراو', kpi_balance_owed:'ماوە (قەرزی ئێمە)',
+    empty_no_payments:'هیچ پارەدانێک تۆمار نەکراوە', confirm_delete_payment:'دڵنیای لە سڕینەوەی ئەم پارەدانە؟',
     tab_invoices:'قایمەکان', tab_supplier_returns:'گەڕاندنەوەکان', btn_add_supplier_return:'+ زیادکردنی گەڕاندنەوە',
     label_return_ref:'ژمارە/تێبینی (ئارەزوومەندانە)', label_return_reason:'هۆکار',
     btn_save_supplier_return:'پاشەکەوتکردنی گەڕاندنەوە', empty_no_supplier_returns:'هیچ گەڕاندنەوەیەک بۆ ئەم کۆگایە تۆمار نەکراوە',
@@ -1186,6 +1230,11 @@ const translations = {
     empty_no_expenses_day:'No expenses recorded for this day',
     alert_enter_expense_desc:'Please enter the expense type', alert_invalid_amount:'Invalid amount',
     confirm_delete_expense:'Are you sure you want to delete this expense?', today_expenses_title:"Today's Expenses",
+    tab_payments:'Payments', label_add_payment:'New Payment', label_payment_amount:'Amount',
+    label_payment_note:'Note (optional)', btn_add_payment:'+ Add Payment',
+    label_payment_history:'Payment History', th_amount:'Amount',
+    kpi_total_purchased:'Total Purchased', kpi_total_paid:'Total Paid', kpi_balance_owed:'Balance Owed',
+    empty_no_payments:'No payments recorded yet', confirm_delete_payment:'Are you sure you want to delete this payment?',
     tab_invoices:'Invoices', tab_supplier_returns:'Returns to Supplier', btn_add_supplier_return:'+ Add Return',
     label_return_ref:'Reference/Note (optional)', label_return_reason:'Reason',
     btn_save_supplier_return:'Save Return', empty_no_supplier_returns:'No returns recorded for this supplier yet',
@@ -1977,12 +2026,16 @@ function setSupplierTab(tab){
   currentSupplierTab = tab;
   document.getElementById('supplierInvoicesTabBody').style.display = tab==='invoices' ? 'block' : 'none';
   document.getElementById('supplierReturnsTabBody').style.display = tab==='returns' ? 'block' : 'none';
+  document.getElementById('supplierPaymentsTabBody').style.display = tab==='payments' ? 'block' : 'none';
   const invBtn = document.getElementById('tabInvoicesBtn');
   const retBtn = document.getElementById('tabReturnsBtn');
+  const payBtn = document.getElementById('tabPaymentsBtn');
   invBtn.className = 'btn ' + (tab==='invoices' ? 'blue' : 'ghost');
   retBtn.className = 'btn ' + (tab==='returns' ? 'blue' : 'ghost');
+  payBtn.className = 'btn ' + (tab==='payments' ? 'blue' : 'ghost');
   if(tab==='invoices') renderInvoiceList();
-  else renderSupplierReturnList();
+  else if(tab==='returns') renderSupplierReturnList();
+  else renderSupplierPayments();
 }
 function renderPurchaseSearch(){
   const q = document.getElementById('purchaseSearch').value.trim().toLowerCase();
@@ -2306,6 +2359,66 @@ function renderSupplierReturnList(){
     });
   });
   box.innerHTML = html;
+}
+
+function renderSupplierPayments(){
+  const kpisBox = document.getElementById('supplierPaymentKpis');
+  const tbody = document.getElementById('supplierPaymentsTableBody');
+  if(!kpisBox || !tbody) return;
+  const dateInput = document.getElementById('paymentDate');
+  if(dateInput && !dateInput.value) dateInput.value = todayStr();
+
+  const invoices = purchaseInvoices.filter(inv=>inv.supplierId===currentSupplierId);
+  const totalPurchased = invoices.reduce((sum,inv)=>{
+    return sum + (inv.items||[]).reduce((a,it)=> a + (parseFloat(it.price)||0) * (parseFloat(it.qty)||1), 0);
+  }, 0);
+
+  const payments = supplierPayments.filter(p=>p.supplierId===currentSupplierId);
+  const totalPaid = payments.reduce((a,p)=>a+(parseFloat(p.amount)||0),0);
+  const balance = totalPurchased - totalPaid;
+
+  kpisBox.innerHTML = `
+    <div class="kpi"><span>${t('kpi_total_purchased')}</span><b>${fmt(totalPurchased)}</b></div>
+    <div class="kpi"><span>${t('kpi_total_paid')}</span><b style="color:var(--ok);">${fmt(totalPaid)}</b></div>
+    <div class="kpi"><span>${t('kpi_balance_owed')}</span><b style="color:${balance>0?'var(--danger)':'var(--ok)'};">${fmt(balance)}</b></div>
+  `;
+
+  if(payments.length===0){
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">'+t('empty_no_payments')+'</td></tr>';
+    return;
+  }
+  const sorted = [...payments].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  tbody.innerHTML = sorted.map(p=>`
+    <tr>
+      <td>${fmt(p.amount)}</td>
+      <td>${p.date||''}</td>
+      <td>${p.note?escapeHtml(p.note):'—'}</td>
+      <td><button class="btn danger small" onclick="deleteSupplierPayment('${p.id}')">${t('btn_delete')}</button></td>
+    </tr>
+  `).join('');
+}
+async function addSupplierPayment(){
+  const amount = parseFloat(document.getElementById('paymentAmount').value);
+  const date = document.getElementById('paymentDate').value || todayStr();
+  const note = document.getElementById('paymentNote').value.trim();
+  if(!amount || amount<=0){ alert(t('alert_invalid_amount')); return; }
+  const supplier = suppliers.find(s=>s.id===currentSupplierId);
+  const record = {
+    id: uid(),
+    supplierId: currentSupplierId,
+    supplierName: supplier ? supplier.name : '',
+    amount, date, note
+  };
+  try{
+    await db.collection('supplierPayments').doc(record.id).set(record);
+  }catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+  document.getElementById('paymentAmount').value='';
+  document.getElementById('paymentNote').value='';
+}
+async function deleteSupplierPayment(id){
+  if(!confirm(t('confirm_delete_payment'))) return;
+  try{ await db.collection('supplierPayments').doc(id).delete(); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
 }
 function backToSupplierReturnsList(){
   showPurchSubview('invoices');
