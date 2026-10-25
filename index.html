@@ -1337,8 +1337,13 @@ let selectedPriceType = null;
 
 function uid(){ return 'id_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
 function fmt(n){ return Number(n||0).toLocaleString('en-US'); }
-function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
-function nowTimeStr(){ const d=new Date(); return d.toTimeString().slice(0,5); }
+/* All dates/times use Iraq time (Asia/Baghdad, UTC+3) no matter what the device clock/timezone is */
+const IQ_TZ = 'Asia/Baghdad';
+const iqFormatter = new Intl.DateTimeFormat('en-CA', {timeZone:IQ_TZ, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+function iraqParts(d){ const o={}; iqFormatter.formatToParts(d).forEach(p=>{ o[p.type]=p.value; }); return o; }
+function localDateStr(d){ const o=iraqParts(d); return o.year+'-'+o.month+'-'+o.day; }
+function todayStr(){ return localDateStr(new Date()); }
+function nowTimeStr(){ const o=iraqParts(new Date()); return o.hour+':'+o.minute; }
 
 /* ===================== LOGIN ===================== */
 function setLoginRole(r){
@@ -2765,9 +2770,8 @@ function renderSalesChart(){
   const labels = [];
   const cashData = [], debtData = [], returnData = [], expenseData = [];
   for(let i=13;i>=0;i--){
-    const d = new Date();
-    d.setDate(d.getDate()-i);
-    const ds = d.toISOString().slice(0,10);
+    const d = new Date(Date.now() - i*24*60*60*1000);
+    const ds = localDateStr(d);
     labels.push(ds.slice(5));
     const daySales = sales.filter(s=>s.date===ds);
     cashData.push(daySales.filter(s=>s.type==='cash').reduce((a,s)=>a+s.total,0));
