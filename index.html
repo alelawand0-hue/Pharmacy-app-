@@ -766,7 +766,10 @@
             </div>
             <button class="btn ghost small" style="margin-top:10px;" onclick="addInvoiceRow()" data-i18n="btn_add_row">+ زیادکردنی ڕیز</button>
           </div>
-          <button class="btn blue" onclick="saveInvoice()" data-i18n="btn_save_invoice">پاشەکەوتکردنی قایمە</button>
+          <div class="row between">
+            <button class="btn blue" onclick="saveInvoice()" data-i18n="btn_save_invoice">پاشەکەوتکردنی قایمە</button>
+            <button class="btn danger" id="deleteInvoiceBtn" style="display:none;" onclick="deleteInvoice()" data-i18n="btn_delete">سڕینەوە</button>
+          </div>
         </div>
       </section>
 
@@ -1079,7 +1082,7 @@ const translations = {
     label_password:'ووشەی نهێنی', btn_login:'چوونەژوورەوە',
     nav_warehouse:'کۆگا', nav_sales:'فرۆشتن', nav_returns:'گەڕاندنەوە', nav_debt:'قەرز',
     nav_reports:'راپۆرت', nav_expiry:'ئێکسپایەر', nav_settings:'ڕێکخستن', btn_logout:'دەرچوون',
-    btn_add_medicine:'+ زیادکردنی دەرمان', ph_wh_search:'گەران بە ناو، کۆمپانیا یان بارکۆدی دەرمان...', pdf_title:'لیستی کۆگا',
+    btn_add_medicine:'+ زیادکردنی دەرمان', ph_wh_search:'گەران بە ناو، کۆمپانیا یان بارکۆدی دەرمان...', pdf_title:'لیستی کۆگا', btn_cancel_invoice:'ڕەشکردنەوە', btn_restore_invoice:'گەڕاندنەوە', badge_invoice_cancelled:'ڕەشکراوەتەوە', confirm_cancel_invoice:'ئەم قایمەیە ڕەش دەکرێتەوە و لە کۆی گشتی لادەبرێت. دڵنیای؟', confirm_delete_invoice:'ئەم قایمەیە بۆ هەمیشە دەسڕدرێتەوە. دڵنیای؟',
     th_name:'ناو', th_type:'جۆر', th_barcode:'بارکۆد', th_expiry:'بەروار بەسەرچوون',
     th_stock:'بڕی مابوو', th_wholesale:'نرخی کۆگا', th_sticker:'نرخی ستیکەر', th_discount:'نرخی داشکان',
     th_action:'کردار', btn_edit:'دەستکاری',
@@ -1192,7 +1195,7 @@ const translations = {
     label_password:'Password', btn_login:'Login',
     nav_warehouse:'Warehouse', nav_sales:'Sales', nav_returns:'Returns', nav_debt:'Debt',
     nav_reports:'Reports', nav_expiry:'Expiry', nav_settings:'Settings', btn_logout:'Logout',
-    btn_add_medicine:'+ Add Medicine', ph_wh_search:'Search by medicine name, company, or barcode...', pdf_title:'Warehouse List',
+    btn_add_medicine:'+ Add Medicine', ph_wh_search:'Search by medicine name, company, or barcode...', pdf_title:'Warehouse List', btn_cancel_invoice:'Cross out', btn_restore_invoice:'Restore', badge_invoice_cancelled:'Crossed out', confirm_cancel_invoice:'This invoice will be crossed out and removed from the totals. Continue?', confirm_delete_invoice:'This invoice will be permanently deleted. Continue?',
     th_name:'Name', th_type:'Type', th_barcode:'Barcode', th_expiry:'Expiry Date',
     th_stock:'Remaining Stock', th_wholesale:'Wholesale Price', th_sticker:'Sticker Price', th_discount:'Discount Price',
     th_action:'Action', btn_edit:'Edit',
@@ -2121,6 +2124,7 @@ function renderPurchaseSearch(){
 
   let matches = [];
   purchaseInvoices.forEach(inv=>{
+    if(inv.cancelled) return;
     const invNumMatch = (inv.invoiceNumber||'').toLowerCase().includes(q);
     (inv.items||[]).forEach(it=>{
       const nameMatch = (it.name||'').toLowerCase().includes(q);
@@ -2161,7 +2165,7 @@ function renderSupplierList(){
     return;
   }
   box.innerHTML = suppliers.map(s=>{
-    const count = purchaseInvoices.filter(inv=>inv.supplierId===s.id).length;
+    const count = purchaseInvoices.filter(inv=>inv.supplierId===s.id && !inv.cancelled).length;
     return `<div class="card" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;" onclick="openSupplier('${s.id}')">
       <div><b>${escapeHtml(s.name)}</b><div style="font-size:12px;color:var(--muted);margin-top:4px;">${count} ${t('label_invoices_count')}</div></div>
       <button class="btn danger small" onclick="event.stopPropagation();deleteSupplier('${s.id}')">${t('btn_delete')}</button>
@@ -2288,15 +2292,37 @@ function renderInvoiceList(){
     html += `<div style="font-size:12.5px;font-weight:800;color:var(--muted);margin:16px 4px 8px;display:flex;align-items:center;gap:6px;">📅 ${escapeHtml(d)}</div>`;
     grouped[d].forEach(inv=>{
       const itemCount = (inv.items||[]).length;
+      const cancelled = !!inv.cancelled;
       html += `<div class="card" style="cursor:pointer;margin-bottom:10px;" onclick="openEditInvoice('${inv.id}')">
-        <div class="row between">
-          <b>${t('label_invoice_number')}: ${escapeHtml(inv.invoiceNumber||'—')}</b>
+        <div class="row between" style="gap:10px;">
+          <div class="${cancelled?'strike':''}">
+            <b>${t('label_invoice_number')}: ${escapeHtml(inv.invoiceNumber||'—')}</b>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:6px;">${itemCount} ${t('label_items_count')}</div>
+          </div>
+          <div class="row" style="gap:8px;">
+            ${cancelled ? '<span class="badge gray">'+t('badge_invoice_cancelled')+'</span>' : ''}
+            <button class="btn ${cancelled?'ok':'danger'} small" onclick="event.stopPropagation();toggleInvoiceCancelled('${inv.id}')">${cancelled ? t('btn_restore_invoice') : t('btn_cancel_invoice')}</button>
+          </div>
         </div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:6px;">${itemCount} ${t('label_items_count')}</div>
       </div>`;
     });
   });
   box.innerHTML = html;
+}
+async function toggleInvoiceCancelled(id){
+  const inv = purchaseInvoices.find(x=>x.id===id);
+  if(!inv) return;
+  if(!inv.cancelled && !confirm(t('confirm_cancel_invoice'))) return;
+  try{ await db.collection('purchaseInvoices').doc(id).update({cancelled: !inv.cancelled}); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
+}
+async function deleteInvoice(){
+  if(!editingInvoiceId) return;
+  if(!confirm(t('confirm_delete_invoice'))) return;
+  try{ await db.collection('purchaseInvoices').doc(editingInvoiceId).delete(); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+  editingInvoiceId = null;
+  backToInvoiceList();
 }
 function backToInvoiceList(){
   showPurchSubview('invoices');
@@ -2307,6 +2333,7 @@ function blankInvoiceRow(){
 }
 function openNewInvoice(){
   editingInvoiceId = null;
+  const _db = document.getElementById('deleteInvoiceBtn'); if(_db) _db.style.display='none';
   invoiceFormItems = [blankInvoiceRow()];
   document.getElementById('invoiceNumber').value = '';
   document.getElementById('invoiceDate').value = todayStr();
@@ -2317,6 +2344,7 @@ function openEditInvoice(id){
   const inv = purchaseInvoices.find(x=>x.id===id);
   if(!inv) return;
   editingInvoiceId = id;
+  const _dbe = document.getElementById('deleteInvoiceBtn'); if(_dbe) _dbe.style.display='inline-block';
   invoiceFormItems = (inv.items||[]).map(r=>{
     const row = blankInvoiceRow();
     Object.keys(r).forEach(k=>{ row[k] = r[k]!=null ? r[k] : ''; });
@@ -2383,7 +2411,8 @@ async function saveInvoice(){
     supplierName: supplier ? supplier.name : '',
     invoiceNumber,
     date,
-    items: cleanItems
+    items: cleanItems,
+    cancelled: !!((purchaseInvoices.find(x=>x.id===editingInvoiceId)||{}).cancelled)
   };
   try{
     await db.collection('purchaseInvoices').doc(record.id).set(record);
@@ -2434,7 +2463,7 @@ function renderSupplierPayments(){
   const dateInput = document.getElementById('paymentDate');
   if(dateInput && !dateInput.value) dateInput.value = todayStr();
 
-  const invoices = purchaseInvoices.filter(inv=>inv.supplierId===currentSupplierId);
+  const invoices = purchaseInvoices.filter(inv=>inv.supplierId===currentSupplierId && !inv.cancelled);
   const totalPurchased = invoices.reduce((sum,inv)=>{
     return sum + (inv.items||[]).reduce((a,it)=> a + (parseFloat(it.price)||0) * (parseFloat(it.qty)||1), 0);
   }, 0);
