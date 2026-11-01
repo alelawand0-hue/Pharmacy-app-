@@ -765,6 +765,10 @@
               </table>
             </div>
             <button class="btn ghost small" style="margin-top:10px;" onclick="addInvoiceRow()" data-i18n="btn_add_row">+ زیادکردنی ڕیز</button>
+            <div class="row between" style="margin-top:14px;padding-top:12px;border-top:2px solid var(--line);">
+              <b style="font-size:15px;" data-i18n="label_invoice_total">کۆی گشتی قایمە</b>
+              <b id="invoiceFormTotal" style="font-size:18px;color:var(--primary-dark);">0</b>
+            </div>
           </div>
           <div class="row between">
             <button class="btn blue" onclick="saveInvoice()" data-i18n="btn_save_invoice">پاشەکەوتکردنی قایمە</button>
@@ -950,6 +954,7 @@
     <h3 data-i18n="scanner_title">سکانکردنی بارکۆد</h3>
     <div id="scannerRegion" style="width:100%;border-radius:10px;overflow:hidden;background:#000;min-height:220px;"></div>
     <div id="scannerHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;text-align:center;" data-i18n="scanner_hint_default">کامێراکە بەرەو بارکۆدەکە ڕابگرە</div>
+    <button class="btn blue" id="scannerRetryBtn" style="width:100%;margin-top:12px;display:none;" onclick="retryScanner()" data-i18n="btn_retry">🔄 دووبارە هەوڵبدەرەوە</button>
     <button class="btn ghost" style="width:100%;margin-top:12px;" onclick="closeScanner()" data-i18n="btn_close">داخستن</button>
   </div>
 </div>
@@ -1117,7 +1122,7 @@ const translations = {
     label_med_company:'ناوی کۆمپانیا', th_company:'کۆمپانیا',
     nav_purchases:'قائیمە', ph_supplier_name:'ناوی کۆگا/کۆمپانیا (نموونە: نشمیل)',
     btn_add_supplier:'+ زیادکردنی کۆگا', btn_back:'گەڕانەوە', btn_add_invoice:'+ زیادکردنی قایمە',
-    label_invoice_number:'ژمارەی قایمە', label_invoice_date:'بەروار', label_invoice_items:'مادەکان',
+    label_invoice_number:'ژمارەی قایمە', label_invoice_date:'بەروار', label_invoice_items:'مادەکان', label_invoice_total:'کۆی گشتی قایمە',
     th_item_name:'ناوی مادە', th_free:'فری', th_batch_number:'باج نەمبەر',
     btn_add_row:'+ زیادکردنی ڕیز', btn_save_invoice:'پاشەکەوتکردنی قایمە',
     empty_no_suppliers:'هیچ کۆگایەک زیاد نەکراوە', empty_no_invoices:'هیچ قایمەیەک تۆمار نەکراوە',
@@ -1176,7 +1181,12 @@ const translations = {
     alert_colors_saved:'ڕەنگەکان پاشەکەوت کران', alert_passwords_updated:'ووشە نهێنیەکان نوێ کرانەوە',
     alert_enter_med_name:'تکایە ناوی دەرمان بنووسە',
     scanner_hint_unavailable:'کامێرا بارنەبووە. تکایە ئینتەرنێت بپشکنە.',
-    scanner_hint_error:'ناتوانرێت کامێرا بکرێتەوە. ڕێگە بدە بە کامێرا لە وێبگەڕ، یان دەستی بارکۆدەکە بنووسە.',
+    scanner_hint_error:'ناتوانرێت کامێرا بکرێتەوە. دەتوانیت بارکۆدەکە بە دەست بنووسیت.',
+    scanner_hint_denied:'مۆڵەتی کامێرا نەدراوە. ئایفۆن: لە Safari کلیک لە aA ← Website Settings ← Camera ← Allow. ئەندرۆید: کلیک لەسەر هێمای قفڵ لەتەنیشت ئەدرەسەکە ← Permissions ← Camera ← Allow. پاشان "دووبارە هەوڵبدەرەوە" بکە.',
+    scanner_hint_busy:'کامێراکە لەلایەن ئەپ یان تابێکی ترەوە بەکاردێت. ئەوانی تر دابخە و دووبارە هەوڵبدەرەوە.',
+    scanner_hint_nocam:'هیچ کامێرایەک نەدۆزرایەوە لەسەر ئەم ئامێرە.',
+    scanner_hint_insecure:'کامێرا تەنها لەسەر لینکی ئارام (HTTPS) کاردەکات.',
+    btn_retry:'🔄 دووبارە هەوڵبدەرەوە',
     offline_banner_text:'📡 ئۆفلاینیت — گۆڕانکارییەکان کاتێک ئینتەرنێت هەبێت خۆکار هاوکات دەکرێن',
     warehouse_value_title:'جەردی کۆگا (بەهای پارە)', btn_refresh_value:'🔄 نوێکردنەوە',
     kpi_wholesale_value:'کۆی بەها بە نرخی کۆگا', kpi_sticker_value:'کۆی بەها بە نرخی ستیکەر',
@@ -1230,7 +1240,7 @@ const translations = {
     label_med_company:'Company Name', th_company:'Company',
     nav_purchases:'Purchases', ph_supplier_name:'Supplier/Company name (e.g. Nishmil)',
     btn_add_supplier:'+ Add Supplier', btn_back:'Back', btn_add_invoice:'+ Add Invoice',
-    label_invoice_number:'Invoice Number', label_invoice_date:'Date', label_invoice_items:'Items',
+    label_invoice_number:'Invoice Number', label_invoice_date:'Date', label_invoice_items:'Items', label_invoice_total:'Invoice Total',
     th_item_name:'Item Name', th_free:'Free', th_batch_number:'Batch Number',
     btn_add_row:'+ Add Row', btn_save_invoice:'Save Invoice',
     empty_no_suppliers:'No suppliers added yet', empty_no_invoices:'No invoices recorded yet',
@@ -1289,7 +1299,12 @@ const translations = {
     alert_colors_saved:'Colors saved', alert_passwords_updated:'Passwords updated',
     alert_enter_med_name:'Please enter a medicine name',
     scanner_hint_unavailable:'Camera failed to load. Please check your internet connection.',
-    scanner_hint_error:'Could not open the camera. Allow camera access in the browser, or type the barcode manually.',
+    scanner_hint_error:'Could not open the camera. You can type the barcode manually.',
+    scanner_hint_denied:'Camera permission was not granted. iPhone: in Safari tap aA → Website Settings → Camera → Allow. Android: tap the lock icon next to the address → Permissions → Camera → Allow. Then press "Try again".',
+    scanner_hint_busy:'The camera is being used by another app or tab. Close them and try again.',
+    scanner_hint_nocam:'No camera was found on this device.',
+    scanner_hint_insecure:'The camera only works on a secure (HTTPS) link.',
+    btn_retry:'🔄 Try again',
     offline_banner_text:'📡 You are offline — changes will sync automatically once the internet is back',
     warehouse_value_title:'Inventory Stocktake (Value)', btn_refresh_value:'🔄 Refresh',
     kpi_wholesale_value:'Total Value (Wholesale)', kpi_sticker_value:'Total Value (Sticker)',
@@ -1637,40 +1652,93 @@ function genBarcode(){
 let scannerInstance = null;
 let scannerTargetInputId = null;
 let scannerOnScanned = null;
-function openScanner(targetInputId, onScanned){
+let scannerStarting = false;
+let scannerStopPromise = Promise.resolve();
+// Stops the camera and WAITS until it is really released (prevents "camera busy" errors when reopening quickly)
+function stopScannerInstance(){
+  scannerStopPromise = scannerStopPromise.then(async ()=>{
+    if(scannerInstance){
+      const inst = scannerInstance;
+      scannerInstance = null;
+      try{ await inst.stop(); }catch(e){}
+      try{ inst.clear(); }catch(e){}
+    }
+  });
+  return scannerStopPromise;
+}
+function scannerErrorMessage(err){
+  const raw = String((err && (err.name || err.message)) || err || '');
+  if(/NotAllowed|Permission|denied/i.test(raw)) return t('scanner_hint_denied');
+  if(/NotReadable|TrackStart|Could not start|in use|Abort/i.test(raw)) return t('scanner_hint_busy');
+  if(/NotFound|Overconstrained|no camera|Requested device/i.test(raw)) return t('scanner_hint_nocam');
+  return t('scanner_hint_error') + (raw ? ' ('+raw.slice(0,60)+')' : '');
+}
+async function openScanner(targetInputId, onScanned){
   scannerTargetInputId = targetInputId;
   scannerOnScanned = onScanned || null;
+  const hint = document.getElementById('scannerHint');
+  const retryBtn = document.getElementById('scannerRetryBtn');
   document.getElementById('scannerModal').classList.add('show');
-  document.getElementById('scannerHint').textContent = t('scanner_hint_default');
+  hint.textContent = t('scanner_hint_default');
+  if(retryBtn) retryBtn.style.display = 'none';
   if(typeof Html5Qrcode === 'undefined'){
-    document.getElementById('scannerHint').textContent = t('scanner_hint_unavailable');
+    hint.textContent = t('scanner_hint_unavailable');
+    if(retryBtn) retryBtn.style.display = 'block';
     return;
   }
-  scannerInstance = new Html5Qrcode("scannerRegion");
-  scannerInstance.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 240, height: 140 } },
-    (decodedText)=>{
-      if(scannerTargetInputId){
-        document.getElementById(scannerTargetInputId).value = decodedText;
-      }
-      const cb = scannerOnScanned;
-      closeScanner();
-      if(cb) cb(decodedText);
-    },
-    ()=>{ /* per-frame scan miss, ignore */ }
-  ).catch(err=>{
-    document.getElementById('scannerHint').textContent = t('scanner_hint_error');
+  if(!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    hint.textContent = t('scanner_hint_insecure');
+    return;
+  }
+  if(scannerStarting) return;
+  scannerStarting = true;
+  await stopScannerInstance();
+  const config = { fps: 10, qrbox: { width: 240, height: 140 } };
+  const onOk = (decodedText)=>{
+    if(scannerTargetInputId){
+      document.getElementById(scannerTargetInputId).value = decodedText;
+    }
+    const cb = scannerOnScanned;
+    closeScanner();
+    if(cb) cb(decodedText);
+  };
+  let started = false, lastErr = null;
+  // 1) back camera, 2) any camera by id, 3) front camera
+  const attempts = [ ()=>({facingMode:'environment'}) ];
+  attempts.push(async ()=>{
+    const cams = await Html5Qrcode.getCameras();
+    if(!cams || !cams.length) throw new Error('NotFound');
+    const back = cams.find(c=>/back|rear|environment|پشت/i.test(c.label||''));
+    return (back || cams[cams.length-1]).id;
   });
+  attempts.push(()=>({facingMode:'user'}));
+  for(const getCam of attempts){
+    try{
+      const cam = await getCam();
+      scannerInstance = new Html5Qrcode('scannerRegion');
+      await scannerInstance.start(cam, config, onOk, ()=>{});
+      started = true;
+      break;
+    }catch(e){
+      lastErr = e;
+      await stopScannerInstance();
+      if(/NotAllowed|Permission|denied/i.test(String((e && (e.name||e.message)) || e))) break;
+    }
+  }
+  scannerStarting = false;
+  if(started && !document.getElementById('scannerModal').classList.contains('show')){
+    await stopScannerInstance();   // user closed the window while the camera was starting
+    return;
+  }
+  if(!started){
+    hint.textContent = scannerErrorMessage(lastErr);
+    if(retryBtn) retryBtn.style.display = 'block';
+  }
 }
+function retryScanner(){ openScanner(scannerTargetInputId, scannerOnScanned); }
 function closeScanner(){
   document.getElementById('scannerModal').classList.remove('show');
-  if(scannerInstance){
-    scannerInstance.stop().then(()=>{
-      scannerInstance.clear();
-      scannerInstance = null;
-    }).catch(()=>{ scannerInstance = null; });
-  }
+  stopScannerInstance();
 }
 async function saveMed(){
   const name = document.getElementById('medName').value.trim();
@@ -2298,6 +2366,7 @@ function renderInvoiceList(){
           <div class="${cancelled?'strike':''}">
             <b>${t('label_invoice_number')}: ${escapeHtml(inv.invoiceNumber||'—')}</b>
             <div style="font-size:12.5px;color:var(--muted);margin-top:6px;">${itemCount} ${t('label_items_count')}</div>
+            <div style="font-size:14px;font-weight:800;color:var(--primary-dark);margin-top:6px;">${t('label_invoice_total')}: ${fmt(invoiceTotal(inv.items))}</div>
           </div>
           <div class="row" style="gap:8px;">
             ${cancelled ? '<span class="badge gray">'+t('badge_invoice_cancelled')+'</span>' : ''}
@@ -2376,9 +2445,18 @@ function renderInvoiceRows(){
       <td><button class="btn danger small" onclick="removeInvoiceRow(${i})">✕</button></td>
     </tr>`;
   }).join('');
+  updateInvoiceFormTotal();
+}
+function invoiceTotal(items){
+  return (items||[]).reduce((a,it)=> a + (parseFloat(it.price)||0) * (parseFloat(it.qty)||1), 0);
+}
+function updateInvoiceFormTotal(){
+  const el = document.getElementById('invoiceFormTotal');
+  if(el) el.textContent = fmt(invoiceTotal(invoiceFormItems.filter(r=>r.name && r.name.trim())));
 }
 function updateInvoiceRow(i, key, val){
   if(invoiceFormItems[i]) invoiceFormItems[i][key] = val;
+  updateInvoiceFormTotal();
 }
 function addInvoiceRow(){
   invoiceFormItems.push(blankInvoiceRow());
