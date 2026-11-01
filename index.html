@@ -332,6 +332,9 @@
     body.printingList #printArea{position:static;padding:0;}
   }
 
+  .codeBig{font-size:24px;font-weight:800;letter-spacing:1px;direction:ltr;unicode-bidi:plaintext;color:var(--primary-dark);}
+  .codeTag{direction:ltr;unicode-bidi:plaintext;font-weight:800;}
+
   /* ---------- OFFLINE BANNER ---------- */
   #offlineBanner{
     display:none;
@@ -393,6 +396,7 @@
         <button type="button" id="sideLangBtnEn" onclick="setLang('en')">English</button>
       </div>
       <button class="navBtn" data-view="warehouse" onclick="switchView('warehouse')"><span class="ic">📦</span> <span data-i18n="nav_warehouse">کۆگا</span></button>
+      <button class="navBtn" data-view="nobarcode" onclick="switchView('nobarcode')"><span class="ic">🏷️</span> <span data-i18n="nav_nobarcode">بێ بارکۆد</span></button>
       <button class="navBtn" data-view="sales" onclick="switchView('sales')"><span class="ic">🧾</span> <span data-i18n="nav_sales">فرۆشتن</span></button>
       <button class="navBtn" data-view="returns" onclick="switchView('returns')"><span class="ic">↩️</span> <span data-i18n="nav_returns">گەڕاندنەوە</span></button>
       <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> <span data-i18n="nav_debt">قەرز</span></button>
@@ -801,6 +805,31 @@
         </div>
       </section>
 
+      <!-- ============ NO-BARCODE ITEMS ============ -->
+      <section id="view-nobarcode" style="display:none;">
+        <div class="topbar"><h2>🏷️ <span data-i18n="nav_nobarcode">بێ بارکۆد</span></h2></div>
+        <div class="card">
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;" data-i18n="nb_hint">ناوی ئەو دەرمانە بنووسە کە بارکۆدی نییە. سیستەمەکە بارکۆدێکی تایبەتی بۆ دروست دەکات، و دواتر دەتوانیت لە کۆگا خەزنی بکەیت.</div>
+          <div class="row" style="gap:8px;">
+            <input type="text" id="nbName" placeholder="ناوی دەرمان..." data-i18n-placeholder="ph_nb_name" style="flex:1;" oninput="renderNoBarcodeMatches()" onkeydown="if(event.key==='Enter')addNoBarcodeItem()">
+            <button class="btn blue" onclick="addNoBarcodeItem()" data-i18n="btn_nb_generate">دروستکردنی بارکۆد</button>
+          </div>
+          <div id="nbMatches" style="margin-top:10px;"></div>
+        </div>
+        <div id="nbResult"></div>
+        <div class="card">
+          <div class="cardTitle" data-i18n="label_nb_list">لیستی دەرمانە بێ بارکۆدەکان</div>
+          <div class="tblWrap">
+            <table>
+              <thead><tr>
+                <th data-i18n="th_name">ناو</th><th data-i18n="th_barcode">بارکۆد</th><th data-i18n="th_status">دۆخ</th><th data-i18n="th_date_time">بەروار</th><th data-i18n="th_action">کردار</th>
+              </tr></thead>
+              <tbody id="nbTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ SETTINGS ============ -->
       <section id="view-settings" style="display:none;">
         <div class="topbar"><h2>⚙️ <span data-i18n="nav_settings">ڕێکخستن</span></h2></div>
@@ -1031,6 +1060,10 @@ function startListeners(){
     suppliers = snap.docs.map(d=>d.data());
     safeRenderAll();
   }, err=>{ console.error(err); });
+  db.collection('noBarcodeItems').onSnapshot(snap=>{
+    noBarcodeItems = snap.docs.map(d=>d.data());
+    safeRenderAll();
+  }, err=>{ console.error(err); });
   db.collection('purchaseInvoices').onSnapshot(snap=>{
     purchaseInvoices = snap.docs.map(d=>d.data());
     safeRenderAll();
@@ -1056,6 +1089,7 @@ function safeRenderAll(){
   try{ renderReport(); }catch(e){}
   try{ renderReturnsList(); }catch(e){}
   try{ renderExpenses(); }catch(e){}
+  try{ if(currentView==='nobarcode'){ renderNoBarcodeList(); renderNoBarcodeMatches(); } }catch(e){}
   try{ if(currentView==='purchases' && document.getElementById('purchSuppliersView').style.display!=='none') { renderSupplierList(); renderPurchaseSearch(); } }catch(e){}
   try{ if(currentView==='purchases' && document.getElementById('purchInvoicesView').style.display!=='none') { renderInvoiceList(); renderSupplierReturnList(); renderSupplierPayments(); } }catch(e){}
 }
@@ -1065,6 +1099,7 @@ let medicines = [];
 let sales = [];
 let returns = [];
 let suppliers = [];
+let noBarcodeItems = [];
 let purchaseInvoices = [];
 let expenses = [];
 let currentSupplierId = null;
@@ -1123,6 +1158,17 @@ const translations = {
     nav_purchases:'قائیمە', ph_supplier_name:'ناوی کۆگا/کۆمپانیا (نموونە: نشمیل)',
     btn_add_supplier:'+ زیادکردنی کۆگا', btn_back:'گەڕانەوە', btn_add_invoice:'+ زیادکردنی قایمە',
     label_invoice_number:'ژمارەی قایمە', label_invoice_date:'بەروار', label_invoice_items:'مادەکان', label_invoice_total:'کۆی گشتی قایمە',
+    nav_nobarcode:'بێ بارکۆد',
+    nb_hint:'ناوی ئەو دەرمانە بنووسە کە بارکۆدی نییە. سیستەمەکە بارکۆدێکی تایبەتی بۆ دروست دەکات، و دواتر دەتوانیت لە کۆگا خەزنی بکەیت.',
+    ph_nb_name:'ناوی دەرمان...', btn_nb_generate:'دروستکردنی بارکۆد',
+    nb_no_match:'هیچ دەرمانێکی هاوشێوە نییە — دوگمەی "دروستکردنی بارکۆد" بکە',
+    nb_in_warehouse:'لە کۆگایە', nb_in_list:'لە لیستی بێ بارکۆد',
+    nb_existing_wh:'ئەم دەرمانە پێشتر لە کۆگا هەیە، ئەمە بارکۆدەکەیەتی',
+    nb_existing_list:'ئەم ناوە پێشتر تۆمار کراوە، ئەمە بارکۆدەکەیەتی',
+    btn_copy:'کۆپی', btn_copied:'کۆپی کرا ✓', btn_nb_to_warehouse:'زیادکردن بۆ کۆگا',
+    label_nb_list:'لیستی دەرمانە بێ بارکۆدەکان', empty_nb:'هیچ دەرمانێک تۆمار نەکراوە',
+    nb_status_stored:'✅ لە کۆگا خەزنکراوە', nb_status_pending:'⏳ هێشتا لە کۆگا نییە',
+    alert_nb_enter_name:'تکایە ناوی دەرمان بنووسە', confirm_delete_nb:'دڵنیای لە سڕینەوەی ئەم تۆمارە؟',
     th_item_name:'ناوی مادە', th_free:'فری', th_batch_number:'باج نەمبەر',
     btn_add_row:'+ زیادکردنی ڕیز', btn_save_invoice:'پاشەکەوتکردنی قایمە',
     empty_no_suppliers:'هیچ کۆگایەک زیاد نەکراوە', empty_no_invoices:'هیچ قایمەیەک تۆمار نەکراوە',
@@ -1241,6 +1287,17 @@ const translations = {
     nav_purchases:'Purchases', ph_supplier_name:'Supplier/Company name (e.g. Nishmil)',
     btn_add_supplier:'+ Add Supplier', btn_back:'Back', btn_add_invoice:'+ Add Invoice',
     label_invoice_number:'Invoice Number', label_invoice_date:'Date', label_invoice_items:'Items', label_invoice_total:'Invoice Total',
+    nav_nobarcode:'No Barcode',
+    nb_hint:'Type the name of a medicine that has no barcode. The system creates a unique barcode for it, and you can store it in the warehouse later.',
+    ph_nb_name:'Medicine name...', btn_nb_generate:'Generate Barcode',
+    nb_no_match:'No similar medicine found — press "Generate Barcode"',
+    nb_in_warehouse:'In warehouse', nb_in_list:'In no-barcode list',
+    nb_existing_wh:'This medicine is already in the warehouse; this is its barcode',
+    nb_existing_list:'This name is already registered; this is its barcode',
+    btn_copy:'Copy', btn_copied:'Copied ✓', btn_nb_to_warehouse:'Add to Warehouse',
+    label_nb_list:'Medicines without barcode', empty_nb:'No medicines recorded yet',
+    nb_status_stored:'✅ Stored in warehouse', nb_status_pending:'⏳ Not in warehouse yet',
+    alert_nb_enter_name:'Please enter the medicine name', confirm_delete_nb:'Are you sure you want to delete this record?',
     th_item_name:'Item Name', th_free:'Free', th_batch_number:'Batch Number',
     btn_add_row:'+ Add Row', btn_save_invoice:'Save Invoice',
     empty_no_suppliers:'No suppliers added yet', empty_no_invoices:'No invoices recorded yet',
@@ -1414,7 +1471,7 @@ function applyPermissions(){
 /* ===================== NAV ===================== */
 const VIEW_TITLE_KEY = {
   warehouse:'nav_warehouse', sales:'nav_sales', returns:'nav_returns', debt:'nav_debt',
-  reports:'nav_reports', expiry:'nav_expiry', purchases:'nav_purchases', expenses:'nav_expenses', settings:'nav_settings'
+  reports:'nav_reports', expiry:'nav_expiry', purchases:'nav_purchases', expenses:'nav_expenses', nobarcode:'nav_nobarcode', settings:'nav_settings'
 };
 function switchView(name){
   if(currentRole==='employee' && !getAllowedEmployeeSections().includes(name)) return;
@@ -1447,6 +1504,7 @@ function switchView(name){
     if(de && !de.value) de.value = todayStr();
     renderExpenses();
   }
+  if(name==='nobarcode'){ document.getElementById('nbResult').innerHTML=''; renderNoBarcodeList(); renderNoBarcodeMatches(); }
   if(name==='settings') fillSettingsForm();
 }
 function toggleSidebar(){
@@ -2149,6 +2207,122 @@ function renderReturnsList(){
     });
   });
   tbody.innerHTML = out;
+}
+
+/* ===================== NO-BARCODE ITEMS ===================== */
+function genUniqueCode(){
+  let code;
+  do{ code = '2' + String(Math.floor(10000000000 + Math.random()*89999999999)).slice(0,11); }
+  while(medicines.some(m=>m.barcode===code) || noBarcodeItems.some(n=>n.code===code));
+  return code;
+}
+function canUseWarehouse(){
+  return currentRole==='manager' || getAllowedEmployeeSections().includes('warehouse');
+}
+async function copyCode(btn){
+  const code = btn.dataset.code || '';
+  try{ await navigator.clipboard.writeText(code); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(_){}
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = t('btn_copied');
+  setTimeout(()=>{ btn.textContent = old; }, 1500);
+}
+function renderNoBarcodeMatches(){
+  const box = document.getElementById('nbMatches');
+  if(!box) return;
+  const q = document.getElementById('nbName').value.trim().toLowerCase();
+  if(!q){ box.innerHTML=''; return; }
+  const found = [];
+  medicines.forEach(m=>{ if(m.barcode && (m.name||'').toLowerCase().includes(q)) found.push({name:m.name, code:m.barcode, src:'wh'}); });
+  noBarcodeItems.forEach(n=>{ if((n.name||'').toLowerCase().includes(q) && !medicines.some(m=>m.barcode===n.code)) found.push({name:n.name, code:n.code, src:'nb'}); });
+  if(found.length===0){
+    box.innerHTML = '<div style="font-size:12.5px;color:var(--muted);">'+t('nb_no_match')+'</div>';
+    return;
+  }
+  box.innerHTML = found.slice(0,8).map(f=>`
+    <div class="row between" style="padding:8px 0;border-top:1px solid var(--line);gap:8px;flex-wrap:wrap;">
+      <div><b>${escapeHtml(f.name)}</b><div style="font-size:11.5px;color:var(--muted);">${f.src==='wh'?t('nb_in_warehouse'):t('nb_in_list')}</div></div>
+      <div class="row" style="gap:8px;"><span class="codeTag">${escapeHtml(f.code)}</span>
+        <button class="btn ghost small" data-code="${escapeHtml(f.code)}" onclick="copyCode(this)">${t('btn_copy')}</button></div>
+    </div>`).join('');
+}
+function showNbResult(r){
+  const stored = medicines.some(m=>m.barcode===r.code);
+  const canAdd = r.id && !stored && canUseWarehouse();
+  document.getElementById('nbResult').innerHTML = `
+    <div class="card" style="border:2px solid var(--accent);text-align:center;">
+      <div style="font-size:13px;color:var(--muted);">${escapeHtml(r.name)}</div>
+      <div class="codeBig" style="margin:8px 0;">${escapeHtml(r.code)}</div>
+      ${r.note ? '<div style="font-size:12.5px;color:var(--warn);margin-bottom:8px;">'+r.note+'</div>' : ''}
+      <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn ghost" data-code="${escapeHtml(r.code)}" onclick="copyCode(this)">${t('btn_copy')}</button>
+        ${canAdd ? `<button class="btn blue" onclick="nbAddToWarehouse('${r.id}')">${t('btn_nb_to_warehouse')}</button>` : ''}
+      </div>
+    </div>`;
+}
+async function addNoBarcodeItem(){
+  const input = document.getElementById('nbName');
+  const name = input.value.trim();
+  if(!name){ alert(t('alert_nb_enter_name')); return; }
+  const lower = name.toLowerCase();
+  const inWh = medicines.find(m=>(m.name||'').toLowerCase()===lower && m.barcode);
+  const inList = noBarcodeItems.find(n=>(n.name||'').toLowerCase()===lower);
+  let result;
+  if(inWh){
+    result = {name:inWh.name, code:inWh.barcode, note:t('nb_existing_wh')};
+  } else if(inList){
+    result = {name:inList.name, code:inList.code, id:inList.id, note:t('nb_existing_list')};
+  } else {
+    const item = {id:uid(), name, code:genUniqueCode(), date:todayStr()};
+    try{ await db.collection('noBarcodeItems').doc(item.id).set(item); }
+    catch(e){ alert(t('alert_generic_error_prefix')+e.message); return; }
+    result = {name:item.name, code:item.code, id:item.id, note:''};
+  }
+  showNbResult(result);
+  input.value='';
+  renderNoBarcodeMatches();
+}
+function nbAddToWarehouse(id){
+  const item = noBarcodeItems.find(n=>n.id===id);
+  if(!item) return;
+  switchView('warehouse');
+  openMedModal();
+  document.getElementById('medName').value = item.name;
+  document.getElementById('medBarcode').value = item.code;
+}
+async function deleteNoBarcodeItem(id){
+  if(!confirm(t('confirm_delete_nb'))) return;
+  try{ await db.collection('noBarcodeItems').doc(id).delete(); }
+  catch(e){ alert(t('alert_generic_error_prefix')+e.message); }
+}
+function renderNoBarcodeList(){
+  const tbody = document.getElementById('nbTableBody');
+  if(!tbody) return;
+  if(noBarcodeItems.length===0){
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">'+t('empty_nb')+'</td></tr>';
+    return;
+  }
+  const list = [...noBarcodeItems].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const canWh = canUseWarehouse();
+  tbody.innerHTML = list.map(n=>{
+    const stored = medicines.some(m=>m.barcode===n.code);
+    return `<tr>
+      <td>${escapeHtml(n.name)}</td>
+      <td><span class="codeTag">${escapeHtml(n.code)}</span></td>
+      <td>${stored ? '<span class="badge green">'+t('nb_status_stored')+'</span>' : '<span class="badge orange">'+t('nb_status_pending')+'</span>'}</td>
+      <td>${n.date||''}</td>
+      <td><div class="row" style="gap:6px;">
+        <button class="btn ghost small" data-code="${escapeHtml(n.code)}" onclick="copyCode(this)">${t('btn_copy')}</button>
+        ${(!stored && canWh) ? `<button class="btn blue small" onclick="nbAddToWarehouse('${n.id}')">${t('btn_nb_to_warehouse')}</button>` : ''}
+        <button class="btn danger small" onclick="deleteNoBarcodeItem('${n.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
 
 /* ===================== PURCHASES (قائیمە) ===================== */
@@ -2941,6 +3115,7 @@ function fillSettingsForm(){
 }
 const PERM_SECTIONS = [
   {key:'warehouse', label:'nav_warehouse'},
+  {key:'nobarcode', label:'nav_nobarcode'},
   {key:'sales', label:'nav_sales'},
   {key:'returns', label:'nav_returns'},
   {key:'debt', label:'nav_debt'},
