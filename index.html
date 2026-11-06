@@ -332,6 +332,7 @@
     body.printingList #printArea{position:static;padding:0;}
   }
 
+  .navBadge{margin-inline-start:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:800;}
   .codeBig{font-size:24px;font-weight:800;letter-spacing:1px;direction:ltr;unicode-bidi:plaintext;color:var(--primary-dark);}
   .codeTag{direction:ltr;unicode-bidi:plaintext;font-weight:800;}
 
@@ -401,7 +402,7 @@
       <button class="navBtn" data-view="returns" onclick="switchView('returns')"><span class="ic">↩️</span> <span data-i18n="nav_returns">گەڕاندنەوە</span></button>
       <button class="navBtn" data-view="debt" onclick="switchView('debt')"><span class="ic">💳</span> <span data-i18n="nav_debt">قەرز</span></button>
       <button class="navBtn" data-view="reports" onclick="switchView('reports')"><span class="ic">📊</span> <span data-i18n="nav_reports">راپۆرت</span></button>
-      <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> <span data-i18n="nav_expiry">ئێکسپایەر</span></button>
+      <button class="navBtn" data-view="expiry" onclick="switchView('expiry')"><span class="ic">⏰</span> <span data-i18n="nav_expiry">ئێکسپایەر</span><span class="navBadge" id="expiryNavBadge" style="display:none;"></span></button>
       <button class="navBtn" data-view="purchases" onclick="switchView('purchases')"><span class="ic">📥</span> <span data-i18n="nav_purchases">قائیمە</span></button>
       <button class="navBtn" data-view="expenses" onclick="switchView('expenses')"><span class="ic">💸</span> <span data-i18n="nav_expenses">خەرجی</span></button>
       <button class="navBtn" data-view="settings" onclick="switchView('settings')"><span class="ic">⚙️</span> <span data-i18n="nav_settings">ڕێکخستن</span></button>
@@ -617,7 +618,17 @@
 
       <!-- ============ EXPIRY ============ -->
       <section id="view-expiry" style="display:none;">
-        <div class="topbar"><h2>⏰ <span data-i18n="nav_expiry">ئێکسپایەر</span> <span data-i18n="expiry_header_suffix">(٦٠ ڕۆژ یان کەمتر)</span></h2></div>
+        <div class="topbar"><h2>⏰ <span data-i18n="nav_expiry">ئێکسپایەر</span> <span id="expiryHeaderSuffix"></span></h2></div>
+        <div class="card">
+          <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;">
+            <label class="lbl" style="margin:0;" data-i18n="label_expiry_days">ڕۆژی ئاگادارکردنەوە</label>
+            <button type="button" class="btn small ghost" id="expBtn30" onclick="setExpiryDays(30)">30</button>
+            <button type="button" class="btn small ghost" id="expBtn60" onclick="setExpiryDays(60)">60</button>
+            <button type="button" class="btn small ghost" id="expBtn90" onclick="setExpiryDays(90)">90</button>
+            <input type="number" id="expiryDaysInput" min="1" max="3650" style="width:90px;" onchange="setExpiryDays(this.value)">
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;" data-i18n="expiry_hint_stock">تەنها ئەو دەرمانانە پیشان دەدرێن کە هێشتا لە کۆگا ماون.</div>
+        </div>
         <div class="card">
           <div class="tblWrap">
             <table>
@@ -988,6 +999,17 @@
   </div>
 </div>
 
+<div class="modalBg" id="expiryAlertModal">
+  <div class="modalCard" style="max-width:440px;">
+    <h3 data-i18n="expiry_alert_title">⚠️ ئاگادارکردنەوەی ئێکسپایەر</h3>
+    <div id="expiryAlertBody"></div>
+    <div class="row" style="gap:8px;margin-top:16px;">
+      <button class="btn ghost" style="flex:1;" onclick="closeExpiryAlert()" data-i18n="btn_close">داخستن</button>
+      <button class="btn blue" style="flex:1;" onclick="closeExpiryAlert();switchView('expiry')" data-i18n="btn_view_expiry">بینینی هەموو</button>
+    </div>
+  </div>
+</div>
+
 <div id="printArea"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1085,6 +1107,7 @@ function safeRenderAll(){
   if(document.getElementById('app').style.display==='none') return;
   try{ renderWarehouse(); }catch(e){}
   try{ renderExpiry(); }catch(e){}
+  try{ if(currentRole && Date.now()-loginAt<15000) checkExpiryAlert(); }catch(e){}
   try{ renderDebtList(); }catch(e){}
   try{ renderReport(); }catch(e){}
   try{ renderReturnsList(); }catch(e){}
@@ -1158,6 +1181,12 @@ const translations = {
     nav_purchases:'قائیمە', ph_supplier_name:'ناوی کۆگا/کۆمپانیا (نموونە: نشمیل)',
     btn_add_supplier:'+ زیادکردنی کۆگا', btn_back:'گەڕانەوە', btn_add_invoice:'+ زیادکردنی قایمە',
     label_invoice_number:'ژمارەی قایمە', label_invoice_date:'بەروار', label_invoice_items:'مادەکان', label_invoice_total:'کۆی گشتی قایمە',
+    label_expiry_days:'ڕۆژی ئاگادارکردنەوە', expiry_header_fmt:'({n} ڕۆژ یان کەمتر)',
+    expiry_hint_stock:'تەنها ئەو دەرمانانە پیشان دەدرێن کە هێشتا لە کۆگا ماون.',
+    expiry_alert_title:'⚠️ ئاگادارکردنەوەی ئێکسپایەر',
+    expiry_alert_summary:'{n} دەرمان بەسەرچووە یان نزیکە لە بەسەرچوون',
+    expiry_alert_expired:'{n} لەوانە بەسەرچووە',
+    btn_view_expiry:'بینینی هەموو',
     nav_nobarcode:'بێ بارکۆد',
     nb_hint:'ناوی ئەو دەرمانە بنووسە کە بارکۆدی نییە. سیستەمەکە بارکۆدێکی تایبەتی بۆ دروست دەکات، و دواتر دەتوانیت لە کۆگا خەزنی بکەیت.',
     ph_nb_name:'ناوی دەرمان...', btn_nb_generate:'دروستکردنی بارکۆد',
@@ -1287,6 +1316,12 @@ const translations = {
     nav_purchases:'Purchases', ph_supplier_name:'Supplier/Company name (e.g. Nishmil)',
     btn_add_supplier:'+ Add Supplier', btn_back:'Back', btn_add_invoice:'+ Add Invoice',
     label_invoice_number:'Invoice Number', label_invoice_date:'Date', label_invoice_items:'Items', label_invoice_total:'Invoice Total',
+    label_expiry_days:'Alert window (days)', expiry_header_fmt:'({n} days or less)',
+    expiry_hint_stock:'Only medicines that are still in stock are shown.',
+    expiry_alert_title:'⚠️ Expiry Alert',
+    expiry_alert_summary:'{n} medicines are expired or about to expire',
+    expiry_alert_expired:'{n} of them already expired',
+    btn_view_expiry:'View all',
     nav_nobarcode:'No Barcode',
     nb_hint:'Type the name of a medicine that has no barcode. The system creates a unique barcode for it, and you can store it in the warehouse later.',
     ph_nb_name:'Medicine name...', btn_nb_generate:'Generate Barcode',
@@ -1441,6 +1476,10 @@ function doLogin(){
       firstView = allowed.includes('warehouse') ? 'warehouse' : (allowed[0] || 'warehouse');
     }
     switchView(firstView);
+    loginAt = Date.now();
+    expiryAlertShown = false;
+    updateExpiryBadge();
+    setTimeout(checkExpiryAlert, 1000);
     document.getElementById('loginErr').textContent='';
     document.getElementById('loginPass').value='';
   } else {
@@ -1449,6 +1488,8 @@ function doLogin(){
 }
 function logout(){
   currentRole=null;
+  expiryAlertShown=false;
+  closeExpiryAlert();
   document.getElementById('app').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
 }
@@ -1615,7 +1656,7 @@ function renderWarehouse(){
     let expBadge = '';
     if(days!==null){
       if(days<0) expBadge = '<span class="badge red">'+t('badge_expired')+'</span>';
-      else if(days<=60) expBadge = '<span class="badge orange">'+days+' '+t('days_left_suffix')+'</span>';
+      else if(days<=getExpiryDays()) expBadge = '<span class="badge orange">'+days+' '+t('days_left_suffix')+'</span>';
     }
     return `<tr>
       <td>${escapeHtml(m.name)}</td>
@@ -3084,12 +3125,48 @@ function renderSalesChart(){
 }
 
 /* ===================== EXPIRY VIEW ===================== */
-function renderExpiry(){
-  const tbody = document.getElementById('expiryTableBody');
-  const list = medicines
+/* Alert window (days) is chosen by the user and remembered on this device */
+function getExpiryDays(){
+  let n = 60;
+  try{ n = parseInt(localStorage.getItem('phx_expiry_days')) || 60; }catch(e){}
+  return Math.min(3650, Math.max(1, n));
+}
+function setExpiryDays(v){
+  let n = parseInt(v);
+  if(!(n>0)) n = 60;
+  n = Math.min(3650, Math.max(1, n));
+  try{ localStorage.setItem('phx_expiry_days', String(n)); }catch(e){}
+  renderExpiry();
+  renderWarehouse();
+}
+// Medicines that are expired or expire within the chosen window, and are still in stock
+function getExpiringList(){
+  const limit = getExpiryDays();
+  return medicines
     .map(m=>({m, days:daysUntilExpiry(m.expiry)}))
-    .filter(x=>x.days!==null && x.days<=60)
+    .filter(x=>x.days!==null && x.days<=limit && (x.m.totalUnits||0)>0)
     .sort((a,b)=>a.days-b.days);
+}
+function updateExpiryBadge(){
+  const el = document.getElementById('expiryNavBadge');
+  if(!el) return;
+  const n = getExpiringList().length;
+  el.textContent = n;
+  el.style.display = n>0 ? 'inline-block' : 'none';
+}
+function renderExpiry(){
+  const days = getExpiryDays();
+  const sfx = document.getElementById('expiryHeaderSuffix');
+  if(sfx) sfx.textContent = t('expiry_header_fmt').replace('{n}', days);
+  const inp = document.getElementById('expiryDaysInput');
+  if(inp && document.activeElement!==inp) inp.value = days;
+  [30,60,90].forEach(n=>{
+    const b = document.getElementById('expBtn'+n);
+    if(b) b.className = 'btn small ' + (n===days ? 'blue' : 'ghost');
+  });
+  updateExpiryBadge();
+  const tbody = document.getElementById('expiryTableBody');
+  const list = getExpiringList();
   if(list.length===0){
     tbody.innerHTML = '<tr><td colspan="4" class="empty">'+t('empty_no_expiry')+'</td></tr>';
     return;
@@ -3104,6 +3181,30 @@ function renderExpiry(){
     </tr>`;
   }).join('');
 }
+
+/* One pop-up per login: lists medicines that are expired / about to expire */
+let expiryAlertShown = false;
+let loginAt = 0;
+function canSeeExpiry(){
+  return currentRole==='manager' || (currentRole==='employee' && getAllowedEmployeeSections().includes('expiry'));
+}
+function checkExpiryAlert(){
+  if(expiryAlertShown || !currentRole || !canSeeExpiry()) return;
+  const list = getExpiringList();
+  if(list.length===0) return;
+  expiryAlertShown = true;
+  const expired = list.filter(x=>x.days<0).length;
+  let html = '<div style="font-weight:700;margin-bottom:8px;">'+t('expiry_alert_summary').replace('{n}', list.length)+'</div>';
+  if(expired>0) html += '<div style="color:var(--danger);font-size:13px;margin-bottom:8px;">'+t('expiry_alert_expired').replace('{n}', expired)+'</div>';
+  html += list.slice(0,8).map(x=>{
+    const d = x.days<0 ? '<span class="badge red">'+t('badge_expired')+'</span>' : `<span class="badge ${x.days<=14?'red':'orange'}">${x.days} ${t('days_left_suffix')}</span>`;
+    return `<div class="row between" style="padding:7px 0;border-top:1px solid var(--line);gap:8px;"><div><b>${escapeHtml(x.m.name)}</b><div style="font-size:11.5px;color:var(--muted);">${stockDisplay(x.m)}</div></div>${d}</div>`;
+  }).join('');
+  if(list.length>8) html += '<div style="font-size:12px;color:var(--muted);margin-top:6px;">+ '+(list.length-8)+'</div>';
+  document.getElementById('expiryAlertBody').innerHTML = html;
+  document.getElementById('expiryAlertModal').classList.add('show');
+}
+function closeExpiryAlert(){ document.getElementById('expiryAlertModal').classList.remove('show'); }
 
 /* ===================== SETTINGS VIEW ===================== */
 function fillSettingsForm(){
